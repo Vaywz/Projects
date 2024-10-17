@@ -1,0 +1,24 @@
+.divik {
+  font-family: "Times New Roman", serif;
+}
+
+.text {
+  padding: 0;
+  margin: 0;
+}
+
+.text1 {
+  word-spacing: 1.5rem;
+  margin-bottom: 0rem;
+}
+
+.picture {
+  position: relative;
+  margin-top: 1.5rem;
+}
+
+.img-text {
+  position: absolute;
+  top: 30%;
+  left: 5%;
+}
