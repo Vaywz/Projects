@@ -1,21 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lv">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Weather App</title>
+    <title>Laika apstākļu lietotne</title>
     <link rel="stylesheet" href="style.css" />
     <script
       src="https://kit.fontawesome.com/7c8801c017.js"
       crossorigin="anonymous"
     ></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://api.windy.com/v3.0/webgl-dist.js"></script>
   </head>
   <body>
     <div class="container">
       <div class="top-bar">
         <div class="search">
           <ion-icon class="location-icon" name="location-outline"></ion-icon>
-          <input type="text" id="text" placeholder="Riga" />
+          <input type="text" id="text" placeholder="Rīga" />
           <button class="search-btn">
             <ion-icon class="search-icon" name="search-outline"></ion-icon>
           </button>
@@ -25,12 +31,17 @@
 
       <div class="city-list"></div>
 
+      <div class="city">
+        <i class="fa-solid fa-wind"></i>
+        <span></span>
+      </div>
+
       <div class="temperatures">
         <div class="min-temperature">
           <i class="fa-solid fa-wind"></i>
           <div class="text">
             <span></span>
-            <p>City Min Temperature</p>
+            <p>Pilsētas minimālā temperatūra</p>
           </div>
         </div>
 
@@ -38,14 +49,9 @@
           <i class="fa-solid fa-wind"></i>
           <div class="text">
             <span></span>
-            <p>City Max Temperature</p>
+            <p>Pilsētas maksimālā temperatūra</p>
           </div>
         </div>
-      </div>
-
-      <div class="not-found">
-        <img class="error-image" src="img/error.png" />
-        <p class="error-message"></p>
       </div>
 
       <div class="weather-box">
@@ -58,7 +64,7 @@
         <div class="feels-like">
           <i class="fa-solid fa-wind"></i>
           <div class="text">
-            <p>Feels-like&nbsp;<span></span></p>
+            <p>Pēc sajūtām&nbsp;<span></span></p>
           </div>
         </div>
       </div>
@@ -68,7 +74,7 @@
           <i class="fa-solid fa-water"></i>
           <div class="text">
             <span></span>
-            <p>Humidity</p>
+            <p>Mitrums</p>
           </div>
         </div>
 
@@ -76,36 +82,40 @@
           <i class="fa-solid fa-wind"></i>
           <div class="text">
             <span></span>
-            <p>Wind Speed</p>
+            <p>Vēja ātrums</p>
           </div>
         </div>
       </div>
 
       <div class="sunset-sunrise-timezone">
         <div class="sunrise">
-            <i class="fa-solid fa-wind"></i>
-            <div class="text">
-                <span></span>
-                <p>Sunrise</p>
-            </div>          
+          <i class="fa-solid fa-wind"></i>
+          <div class="text">
+            <span></span>
+            <p>Saullēkts</p>
+          </div>
         </div>
         <div class="timezone-hours">
           <i class="fa-solid fa-water"></i>
           <div class="text">
             <span></span>
-            <p>Timezone</p>
+            <p>Laika zona</p>
           </div>
         </div>
-            <div class="sunset">
-                    <i class="fa-solid fa-wind"></i>
-                    <div class="text">
-                        <span></span>
-                        <p>Sunset</p>
-                    </div>                  
-                </div>
-            </div>
+        <div class="sunset">
+          <i class="fa-solid fa-wind"></i>
+          <div class="text">
+            <span></span>
+            <p>Saulriets</p>
+          </div>
+        </div>
+      </div>
 
       <div class="forecast-container"></div>
+
+      <div class="map" id="map">
+        <p class="text"></p>
+      </div>
     </div>
 
     <script src="https://unpkg.com/ionicons@5.4.0/dist/ionicons.js"></script>
