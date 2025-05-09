@@ -233,8 +233,8 @@ body {
 }
 
 .forecast-container {
-  margin-top: 3rem;
-  display: flex;
+  margin-top: 2rem;
+  display: none;
   gap: 1rem;
   flex-wrap: wrap;
 }
@@ -252,13 +252,23 @@ body {
   width: 40px;
 }
 
+
+
+.rain-map{
+  margin-top: 0.5rem;
+}
+
+.rain-map p{
+  color: var(--secondary);
+  font-size: 2.4rem;
+  display: flex;
+  justify-content: center;
+}
+
 .map {
   height: 30rem;
   margin-top: 2rem;
   border-radius: 1rem;
-}
-
-.error-image {
-  visibility: hidden;
+  display: block;
 }
 
