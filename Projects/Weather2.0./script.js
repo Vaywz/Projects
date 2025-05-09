@@ -75,7 +75,9 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector(".weather-details").style.display = "flex";
         document.querySelector(".sunset-sunrise-timezone").style.display =
           "flex";
-        document.getElementById("map").style.display = "block";
+          document.querySelector(".forecast-container").style.display =
+          "flex";
+        document.getElementById("rain-map").style.display = "block";
 
         // Fill in weather data
         document.querySelector(".city span").innerHTML = city;
