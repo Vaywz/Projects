@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
           data.main.temp
         )}°C`;
         document.querySelector(".description").innerHTML =
-          data.weather[0].description; // Optional: Translate weather description
+          data.weather[0].description;
         document.querySelector(
           ".feels-like span"
         ).innerHTML = `${data.main.feels_like.toFixed(0)}°C`;
