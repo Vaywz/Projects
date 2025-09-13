@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const APIKey = "369dc84bc5ad66ddec133018a36e29a1";
+  const APIKey = "API KEY";
   const input = document.querySelector(".search input");
   const searchBtn = document.querySelector(".search-btn");
   const cityList = document.querySelector(".city-list");
