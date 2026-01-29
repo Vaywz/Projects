@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker exec:*)",
+      "Bash(docker ps:*)",
+      "Bash(curl:*)",
+      "Bash(timeout:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker-compose exec:*)"
+    ]
+  }
+}
