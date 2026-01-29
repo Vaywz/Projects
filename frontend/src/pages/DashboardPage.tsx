@@ -22,6 +22,7 @@ import {
   Popconfirm,
   Empty,
   Tabs,
+  theme,
 } from 'antd';
 import {
   PlusOutlined,
@@ -38,6 +39,7 @@ import { DaySummary, TimeEntry, Stats, Vacation, DayStatus } from '../types';
 const { Title, Text } = Typography;
 
 const DashboardPage: React.FC = () => {
+  const { token } = theme.useToken();
   const { t } = useTranslation();
   const { settings, fetchSettings } = useSettingsStore();
   const [todaySummary, setTodaySummary] = useState<DaySummary | null>(null);
@@ -491,6 +493,10 @@ const DashboardPage: React.FC = () => {
                   renderItem={(entry: TimeEntry) => (
                     <List.Item
                       className="time-entry-item"
+                      style={{
+                        background: token.colorFillQuaternary,
+                        border: `1px solid ${token.colorBorderSecondary}`,
+                      }}
                       actions={[
                         <Button
                           type="link"

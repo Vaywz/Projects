@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider, App as AntdApp, Spin } from 'antd';
+import { ConfigProvider, App as AntdApp, Spin, theme } from 'antd';
 import { useTranslation } from 'react-i18next';
 import enUS from 'antd/locale/en_US';
 import ruRU from 'antd/locale/ru_RU';
@@ -11,6 +11,7 @@ import 'dayjs/locale/ru';
 import 'dayjs/locale/lv';
 
 import { useAuthStore } from './store/authStore';
+import { useThemeStore } from './store/themeStore';
 import MainLayout from './components/Layout/MainLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -76,6 +77,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const App: React.FC = () => {
   const { checkAuth, isLoading } = useAuthStore();
+  const { mode } = useThemeStore();
   const { i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(() => normalizeLanguage(i18n.language || 'lv'));
 
@@ -118,6 +120,7 @@ const App: React.FC = () => {
     <ConfigProvider
       locale={currentLocale}
       theme={{
+        algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
           colorPrimary: '#279CF1',
           borderRadius: 6,

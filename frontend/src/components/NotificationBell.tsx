@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Badge, Dropdown, List, Typography, Button, Empty, Spin } from 'antd';
+import { Badge, Dropdown, List, Typography, Button, Empty, Spin, theme } from 'antd';
 import { BellOutlined, CheckOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -16,6 +16,7 @@ const { Text } = Typography;
 const NotificationBell: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { token } = theme.useToken();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -125,13 +126,13 @@ const NotificationBell: React.FC = () => {
       width: 360,
       maxHeight: 400,
       overflow: 'auto',
-      backgroundColor: 'white',
+      backgroundColor: token.colorBgContainer,
       borderRadius: 8,
-      boxShadow: '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)'
+      boxShadow: token.boxShadowSecondary
     }}>
       <div style={{
         padding: '12px 16px',
-        borderBottom: '1px solid #f0f0f0',
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
@@ -167,7 +168,7 @@ const NotificationBell: React.FC = () => {
               <List.Item
                 style={{
                   padding: '12px 16px',
-                  backgroundColor: notification.is_read ? 'transparent' : '#f6ffed',
+                  backgroundColor: notification.is_read ? 'transparent' : token.colorSuccessBg,
                   cursor: 'pointer'
                 }}
                 onClick={() => {
@@ -190,7 +191,7 @@ const NotificationBell: React.FC = () => {
                       width: 32,
                       height: 32,
                       borderRadius: '50%',
-                      backgroundColor: '#f0f0f0',
+                      backgroundColor: token.colorFillSecondary,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'

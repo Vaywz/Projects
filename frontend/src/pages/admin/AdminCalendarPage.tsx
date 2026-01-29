@@ -14,6 +14,7 @@ import {
   Button,
   Segmented,
   DatePicker,
+  theme,
 } from 'antd';
 import { CalendarOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { CircleOff } from 'lucide-react';
@@ -67,6 +68,7 @@ interface EmployeeTimeData {
 const AdminCalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { settings, fetchSettings } = useSettingsStore();
+  const { token } = theme.useToken();
 
   const getHolidayName = (calDay: CalendarDay): string | undefined => {
     if (!calDay.holiday_name) return undefined;
@@ -337,11 +339,11 @@ const AdminCalendarPage: React.FC = () => {
           <span style={{ color: statusColor, display: 'flex', alignItems: 'center' }}>
             {getStatusIcon(displayStatus, 12)}
           </span>
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', color: '#333' }}>
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', color: token.colorText }}>
             {name}
           </span>
           {timeRange && (
-            <span style={{ color: '#1890ff', fontWeight: 600, fontSize: 10 }}>
+            <span style={{ color: token.colorPrimary, fontWeight: 600, fontSize: 10 }}>
               {timeRange}
             </span>
           )}
@@ -381,11 +383,11 @@ const AdminCalendarPage: React.FC = () => {
     const isWeekend = date.day() === 0 || date.day() === 6;
     const filteredEmployees = getFilteredEmployeesForDate(dateStr);
 
-    let bgColor = '#fff';
+    let bgColor = token.colorBgContainer;
     if (calDay?.day_type === 'holiday') {
-      bgColor = '#fff1f0';
+      bgColor = token.colorErrorBg;
     } else if (isWeekend) {
-      bgColor = '#fafafa';
+      bgColor = token.colorFillQuaternary;
     }
 
     return (
@@ -394,7 +396,7 @@ const AdminCalendarPage: React.FC = () => {
         style={{
           flex: 1,
           minWidth: 0,
-          border: '1px solid #f0f0f0',
+          border: `1px solid ${token.colorBorderSecondary}`,
           borderTop: 'none',
           borderLeft: 'none',
           backgroundColor: bgColor,
@@ -409,12 +411,12 @@ const AdminCalendarPage: React.FC = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '4px 6px',
-          borderBottom: '1px solid #f0f0f0',
-          backgroundColor: isToday ? '#e6f7ff' : undefined,
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          backgroundColor: isToday ? token.colorPrimaryBg : undefined,
         }}>
           <span style={{
             fontWeight: isToday ? 700 : 500,
-            color: isToday ? '#1890ff' : isWeekend ? '#999' : '#333',
+            color: isToday ? token.colorPrimary : isWeekend ? token.colorTextTertiary : token.colorText,
             fontSize: 13,
           }}>
             {date.date()}
@@ -436,7 +438,7 @@ const AdminCalendarPage: React.FC = () => {
           {filteredEmployees.slice(0, 5).map(emp => renderEmployeeItem(emp, dateStr, true))}
           {filteredEmployees.length > 5 && (
             <Tooltip title={filteredEmployees.slice(5).map(e => `${e.first_name} ${e.last_name}`).join(', ')}>
-              <div style={{ fontSize: 10, color: '#999', textAlign: 'center', padding: 2 }}>
+              <div style={{ fontSize: 10, color: token.colorTextTertiary, textAlign: 'center', padding: 2 }}>
                 +{filteredEmployees.length - 5} {t('common.more') || 'more'}
               </div>
             </Tooltip>
@@ -454,11 +456,11 @@ const AdminCalendarPage: React.FC = () => {
     const isWeekend = date.day() === 0 || date.day() === 6;
     const filteredEmployees = getFilteredEmployeesForDate(dateStr);
 
-    let bgColor = '#fff';
+    let bgColor = token.colorBgContainer;
     if (calDay?.day_type === 'holiday') {
-      bgColor = '#fff1f0';
+      bgColor = token.colorErrorBg;
     } else if (isWeekend) {
-      bgColor = '#fafafa';
+      bgColor = token.colorFillQuaternary;
     }
 
     return (
@@ -467,7 +469,7 @@ const AdminCalendarPage: React.FC = () => {
         style={{
           flex: 1,
           minWidth: 0,
-          border: '1px solid #f0f0f0',
+          border: `1px solid ${token.colorBorderSecondary}`,
           borderTop: 'none',
           borderLeft: 'none',
           backgroundColor: bgColor,
@@ -480,20 +482,20 @@ const AdminCalendarPage: React.FC = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '8px 10px',
-          borderBottom: '1px solid #f0f0f0',
-          backgroundColor: isToday ? '#e6f7ff' : undefined,
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          backgroundColor: isToday ? token.colorPrimaryBg : undefined,
         }}>
           <div>
             <div style={{
               fontWeight: isToday ? 700 : 500,
-              color: isToday ? '#1890ff' : isWeekend ? '#999' : '#333',
+              color: isToday ? token.colorPrimary : isWeekend ? token.colorTextTertiary : token.colorText,
               fontSize: 14,
             }}>
               {date.format('ddd')}
             </div>
             <div style={{
               fontWeight: isToday ? 700 : 400,
-              color: isToday ? '#1890ff' : isWeekend ? '#999' : '#666',
+              color: isToday ? token.colorPrimary : isWeekend ? token.colorTextTertiary : token.colorTextSecondary,
               fontSize: 18,
             }}>
               {date.date()}
@@ -604,9 +606,9 @@ const AdminCalendarPage: React.FC = () => {
 
         <Spin spinning={loading}>
           {viewMode === 'month' ? (
-            <div style={{ border: '1px solid #f0f0f0', borderBottom: 'none', borderRight: 'none' }}>
+            <div style={{ border: `1px solid ${token.colorBorderSecondary}`, borderBottom: 'none', borderRight: 'none' }}>
               {/* Week day headers */}
-              <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0' }}>
+              <div style={{ display: 'flex', borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
                 {['P', 'O', 'T', 'C', 'Pk', 'S', 'Sv'].map((day, idx) => (
                   <div
                     key={idx}
@@ -615,9 +617,9 @@ const AdminCalendarPage: React.FC = () => {
                       padding: '8px 0',
                       textAlign: 'center',
                       fontWeight: 600,
-                      color: idx >= 5 ? '#999' : '#333',
-                      backgroundColor: '#fafafa',
-                      borderRight: '1px solid #f0f0f0',
+                      color: idx >= 5 ? token.colorTextTertiary : token.colorText,
+                      backgroundColor: token.colorFillQuaternary,
+                      borderRight: `1px solid ${token.colorBorderSecondary}`,
                     }}
                   >
                     {day}
@@ -632,7 +634,7 @@ const AdminCalendarPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div style={{ border: '1px solid #f0f0f0', borderBottom: 'none', borderRight: 'none' }}>
+            <div style={{ border: `1px solid ${token.colorBorderSecondary}`, borderBottom: 'none', borderRight: 'none' }}>
               <div style={{ display: 'flex', minHeight: 400 }}>
                 {getWeekDays().map(date => renderWeekDayCell(date))}
               </div>
@@ -641,11 +643,6 @@ const AdminCalendarPage: React.FC = () => {
         </Spin>
       </Card>
 
-      <style>{`
-        .weekend-column {
-          background-color: #fafafa !important;
-        }
-      `}</style>
     </div>
   );
 };

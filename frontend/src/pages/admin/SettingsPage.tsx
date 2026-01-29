@@ -15,6 +15,7 @@ import {
   Image,
   Spin,
   Tooltip,
+  theme,
 } from 'antd';
 import { UploadOutlined, DeleteOutlined, SaveOutlined, FileImageOutlined } from '@ant-design/icons';
 import api from '../../services/api';
@@ -35,6 +36,7 @@ const iconCategories = [
 
 const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
+  const { token } = theme.useToken();
   const { settings, fetchSettings, updateSettings } = useSettingsStore();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
@@ -142,7 +144,7 @@ const SettingsPage: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#f5f5f5',
+                    background: token.colorFillSecondary,
                     borderRadius: 8,
                   }}
                 >

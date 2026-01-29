@@ -19,6 +19,7 @@ import {
   DatePicker,
   Alert,
   Divider,
+  theme,
 } from 'antd';
 import { PlusOutlined, ExclamationCircleOutlined, SendOutlined } from '@ant-design/icons';
 import type { Dayjs } from 'dayjs';
@@ -36,6 +37,7 @@ const { Title, Text } = Typography;
 
 const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const { token } = theme.useToken();
   const { settings, fetchSettings } = useSettingsStore();
   const { user } = useAuthStore();
 
@@ -675,6 +677,10 @@ const CalendarPage: React.FC = () => {
               renderItem={(entry: TimeEntry) => (
                 <List.Item
                   className="time-entry-item"
+                  style={{
+                    background: token.colorFillQuaternary,
+                    border: `1px solid ${token.colorBorderSecondary}`,
+                  }}
                   actions={[
                     <Button
                       type="link"

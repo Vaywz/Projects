@@ -74,26 +74,20 @@ body {
 }
 
 .employee-card .ant-avatar {
-  border: 2px solid #f0f0f0;
+  border: 2px solid var(--ant-color-border-secondary, #f0f0f0);
 }
 
-/* Time entry list */
+/* Time entry list - removed hardcoded backgrounds, let ant-design handle theming */
 .time-entry-item {
   padding: 12px;
   border-radius: 6px;
   margin-bottom: 8px;
-  background: #fafafa;
-  border: 1px solid #f0f0f0;
-}
-
-.time-entry-item:hover {
-  background: #f5f5f5;
 }
 
 /* Office presence */
 .office-presence-avatar {
   margin-right: -8px;
-  border: 2px solid #fff;
+  border: 2px solid var(--ant-color-bg-container, #fff);
 }
 
 /* Responsive adjustments */

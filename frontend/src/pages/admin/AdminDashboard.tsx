@@ -13,6 +13,7 @@ import {
   Input,
   Statistic,
   DatePicker,
+  theme,
 } from 'antd';
 import {
   UserOutlined,
@@ -35,6 +36,7 @@ const { Search } = Input;
 const AdminDashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { token } = theme.useToken();
   const [employees, setEmployees] = useState<User[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -244,7 +246,7 @@ const AdminDashboard: React.FC = () => {
                     style={{
                       marginTop: 16,
                       padding: 12,
-                      background: '#f5f5f5',
+                      background: token.colorFillSecondary,
                       borderRadius: 4,
                     }}
                   >

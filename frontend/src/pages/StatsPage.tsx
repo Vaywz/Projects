@@ -12,6 +12,7 @@ import {
   Table,
   Tag,
   message,
+  theme,
 } from 'antd';
 import { Clock, Calendar } from 'lucide-react';
 import DynamicIcon from '../components/DynamicIcon';
@@ -41,6 +42,7 @@ const COLORS = ['#279CF1', '#52c41a', '#ff7043', '#436597'];
 
 const StatsPage: React.FC = () => {
   const { t } = useTranslation();
+  const { token } = theme.useToken();
   const { user } = useAuthStore();
   const { settings, fetchSettings } = useSettingsStore();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -99,8 +101,8 @@ const StatsPage: React.FC = () => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc', borderRadius: 4 }}>
-          <p style={{ margin: 0, fontWeight: 'bold' }}>{label}</p>
+        <div style={{ backgroundColor: token.colorBgContainer, padding: '10px', border: `1px solid ${token.colorBorderSecondary}`, borderRadius: 4 }}>
+          <p style={{ margin: 0, fontWeight: 'bold', color: token.colorText }}>{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ margin: 0, color: entry.color }}>
               {entry.name}: {formatHours(entry.value)}

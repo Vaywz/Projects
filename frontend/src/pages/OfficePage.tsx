@@ -16,6 +16,7 @@ import {
   Button,
   Segmented,
   Table,
+  theme,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { UserOutlined, HomeOutlined, CalendarOutlined, LaptopOutlined, EditOutlined, DeleteOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
@@ -67,6 +68,7 @@ interface EmployeeRowData {
 
 const OfficePage: React.FC = () => {
   const { t } = useTranslation();
+  const { token } = theme.useToken();
   const { settings, fetchSettings } = useSettingsStore();
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [loading, setLoading] = useState(true);
@@ -441,13 +443,13 @@ const OfficePage: React.FC = () => {
 
       <style>{`
         .weekend-column {
-          background-color: #fafafa !important;
+          background-color: ${token.colorFillQuaternary} !important;
         }
         .even-row {
-          background-color: #fafafa;
+          background-color: ${token.colorFillQuaternary};
         }
         .odd-row {
-          background-color: #fff;
+          background-color: ${token.colorBgContainer};
         }
         .ant-table-cell {
           padding: 8px 4px !important;

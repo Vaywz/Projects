@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Row,
@@ -10,6 +11,7 @@ import {
   Space,
   message,
   Statistic,
+  theme,
 } from 'antd';
 import {
   ClockCircleOutlined,
@@ -40,6 +42,8 @@ const { RangePicker } = DatePicker;
 const COLORS = ['#279CF1', '#52c41a', '#ff7043', '#436597', '#00bcd4', '#ff9800'];
 
 const AdminStatsPage: React.FC = () => {
+  const { t } = useTranslation();
+  const { token } = theme.useToken();
   const [employees, setEmployees] = useState<User[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -53,7 +57,7 @@ const AdminStatsPage: React.FC = () => {
       const data = await api.getEmployees(true);
       setEmployees(data);
     } catch (error) {
-      message.error('Failed to load employees');
+      message.error(t('statistics.failedToLoadEmployees'));
     }
   };
 
@@ -68,7 +72,7 @@ const AdminStatsPage: React.FC = () => {
       const data = await api.getAllEmployeesStats(params);
       setSummary(data);
     } catch (error) {
-      message.error('Failed to load summary');
+      message.error(t('statistics.failedToLoadSummary'));
     } finally {
       setLoading(false);
     }
@@ -85,7 +89,7 @@ const AdminStatsPage: React.FC = () => {
       const data = await api.getEmployeeStats(params);
       setStats(data);
     } catch (error) {
-      message.error('Failed to load employee stats');
+      message.error(t('statistics.failedToLoadStats'));
     } finally {
       setLoading(false);
     }
@@ -117,8 +121,8 @@ const AdminStatsPage: React.FC = () => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div style={{ backgroundColor: 'white', padding: '10px', border: '1px solid #ccc', borderRadius: 4 }}>
-          <p style={{ margin: 0, fontWeight: 'bold' }}>{label}</p>
+        <div style={{ backgroundColor: token.colorBgContainer, padding: '10px', border: `1px solid ${token.colorBorderSecondary}`, borderRadius: 4 }}>
+          <p style={{ margin: 0, fontWeight: 'bold', color: token.colorText }}>{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ margin: 0, color: entry.color }}>
               {entry.name}: {formatHours(entry.value)}
@@ -133,7 +137,7 @@ const AdminStatsPage: React.FC = () => {
   // Summary table columns
   const summaryColumns = [
     {
-      title: 'Employee',
+      title: t('statistics.employee'),
       key: 'name',
       render: (_: any, record: any) =>
         `${record.first_name || ''} ${record.last_name || ''}`.trim() || record.email,
@@ -144,38 +148,38 @@ const AdminStatsPage: React.FC = () => {
       },
     },
     {
-      title: 'Total Hours',
+      title: t('statistics.totalHours'),
       dataIndex: 'total_hours',
       key: 'hours',
       render: (hours: number) => formatHours(hours || 0),
       sorter: (a: any, b: any) => (a.total_hours || 0) - (b.total_hours || 0),
     },
     {
-      title: 'Days Worked',
+      title: t('statistics.daysWorked'),
       key: 'days',
       render: (_: any, record: any) =>
         `${record.days_with_entries || 0} / ${record.working_days || 0}`,
     },
     {
-      title: 'Office',
+      title: t('statistics.office'),
       dataIndex: 'office_days',
       key: 'office',
       render: (days: number) => days || 0,
     },
     {
-      title: 'Remote',
+      title: t('statistics.remote'),
       dataIndex: 'remote_days',
       key: 'remote',
       render: (days: number) => days || 0,
     },
     {
-      title: 'Sick',
+      title: t('statistics.sick'),
       dataIndex: 'sick_days',
       key: 'sick',
       render: (days: number) => days || 0,
     },
     {
-      title: 'Vacation',
+      title: t('statistics.vacation'),
       dataIndex: 'vacation_days',
       key: 'vacation',
       render: (days: number) => days || 0,
@@ -192,11 +196,11 @@ const AdminStatsPage: React.FC = () => {
 
   const workplaceDistribution = [
     {
-      name: 'Office',
+      name: t('statistics.office'),
       value: summary?.employees?.reduce((sum: number, e: any) => sum + (e.office_days || 0), 0) || 0,
     },
     {
-      name: 'Remote',
+      name: t('statistics.remote'),
       value: summary?.employees?.reduce((sum: number, e: any) => sum + (e.remote_days || 0), 0) || 0,
     },
   ];
@@ -213,13 +217,13 @@ const AdminStatsPage: React.FC = () => {
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
           <Title level={3} style={{ margin: 0 }}>
-            Statistics
+            {t('statistics.title')}
           </Title>
         </Col>
         <Col>
           <Space>
             <Select
-              placeholder="All Employees"
+              placeholder={t('statistics.allEmployees')}
               style={{ width: 200 }}
               allowClear
               value={selectedEmployee}
@@ -234,10 +238,10 @@ const AdminStatsPage: React.FC = () => {
               ))}
             </Select>
             <Select value={period} onChange={setPeriod} style={{ width: 120 }}>
-              <Select.Option value="week">Week</Select.Option>
-              <Select.Option value="month">Month</Select.Option>
-              <Select.Option value="year">Year</Select.Option>
-              <Select.Option value="custom">Custom</Select.Option>
+              <Select.Option value="week">{t('statistics.week')}</Select.Option>
+              <Select.Option value="month">{t('statistics.month')}</Select.Option>
+              <Select.Option value="year">{t('statistics.year')}</Select.Option>
+              <Select.Option value="custom">{t('statistics.custom')}</Select.Option>
             </Select>
             {period === 'custom' && (
               <RangePicker
@@ -257,7 +261,7 @@ const AdminStatsPage: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card className="stats-card" loading={loading}>
                 <Statistic
-                  title="Total Employees"
+                  title={t('statistics.totalEmployees')}
                   value={employees.length}
                   prefix={<TeamOutlined />}
                 />
@@ -266,7 +270,7 @@ const AdminStatsPage: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card className="stats-card" loading={loading}>
                 <Statistic
-                  title="Total Hours"
+                  title={t('statistics.totalHours')}
                   value={formatHours(totalHours)}
                   prefix={<ClockCircleOutlined />}
                 />
@@ -275,7 +279,7 @@ const AdminStatsPage: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card className="stats-card" loading={loading}>
                 <Statistic
-                  title="Avg Hours/Employee"
+                  title={t('statistics.avgHoursPerEmployee')}
                   value={formatHours(avgHours)}
                   prefix={<ClockCircleOutlined />}
                 />
@@ -284,7 +288,7 @@ const AdminStatsPage: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card className="stats-card" loading={loading}>
                 <Statistic
-                  title="Office vs Remote"
+                  title={t('statistics.officeVsRemote')}
                   value={`${workplaceDistribution[0].value}`}
                   suffix={`/ ${workplaceDistribution[1].value}`}
                   prefix={<HomeOutlined />}
@@ -295,7 +299,7 @@ const AdminStatsPage: React.FC = () => {
 
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
             <Col xs={24} lg={16}>
-              <Card title="Hours by Employee" loading={loading}>
+              <Card title={t('statistics.hoursByEmployee')} loading={loading}>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={employeeChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -307,13 +311,13 @@ const AdminStatsPage: React.FC = () => {
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    <Bar dataKey="hours" name="Hours" fill="#279CF1" />
+                    <Bar dataKey="hours" name={t('statistics.hours')} fill="#279CF1" />
                   </BarChart>
                 </ResponsiveContainer>
               </Card>
             </Col>
             <Col xs={24} lg={8}>
-              <Card title="Workplace Distribution" loading={loading}>
+              <Card title={t('statistics.workplaceDistribution')} loading={loading}>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -341,7 +345,7 @@ const AdminStatsPage: React.FC = () => {
             </Col>
           </Row>
 
-          <Card title="Employee Summary" loading={loading}>
+          <Card title={t('statistics.employeeSummary')} loading={loading}>
             <Table
               columns={summaryColumns}
               dataSource={summary?.employees || []}
@@ -358,7 +362,7 @@ const AdminStatsPage: React.FC = () => {
               <Col xs={24} sm={12} lg={6}>
                 <Card className="stats-card" loading={loading}>
                   <Statistic
-                    title="Total Hours"
+                    title={t('statistics.totalHours')}
                     value={formatHours(stats.total_hours)}
                     prefix={<ClockCircleOutlined />}
                   />
@@ -367,7 +371,7 @@ const AdminStatsPage: React.FC = () => {
               <Col xs={24} sm={12} lg={6}>
                 <Card className="stats-card" loading={loading}>
                   <Statistic
-                    title="Working Days"
+                    title={t('statistics.workingDays')}
                     value={stats.days_with_entries}
                     suffix={`/ ${stats.working_days}`}
                   />
@@ -376,7 +380,7 @@ const AdminStatsPage: React.FC = () => {
               <Col xs={24} sm={12} lg={6}>
                 <Card className="stats-card" loading={loading}>
                   <Statistic
-                    title="Office Days"
+                    title={t('statistics.officeTime')}
                     value={stats.office_days}
                     prefix={<HomeOutlined />}
                   />
@@ -385,7 +389,7 @@ const AdminStatsPage: React.FC = () => {
               <Col xs={24} sm={12} lg={6}>
                 <Card className="stats-card" loading={loading}>
                   <Statistic
-                    title="Remote Days"
+                    title={t('statistics.remoteTime')}
                     value={stats.remote_days}
                     prefix={<LaptopOutlined />}
                   />
@@ -393,7 +397,7 @@ const AdminStatsPage: React.FC = () => {
               </Col>
             </Row>
 
-            <Card title="Daily Hours" loading={loading}>
+            <Card title={t('statistics.dailyHours')} loading={loading}>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
                   data={stats.daily_stats
@@ -413,8 +417,8 @@ const AdminStatsPage: React.FC = () => {
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend />
-                  <Bar dataKey="office" name="Office" fill="#279CF1" stackId="a" />
-                  <Bar dataKey="remote" name="Remote" fill="#52c41a" stackId="a" />
+                  <Bar dataKey="office" name={t('statistics.office')} fill="#279CF1" stackId="a" />
+                  <Bar dataKey="remote" name={t('statistics.remote')} fill="#52c41a" stackId="a" />
                 </BarChart>
               </ResponsiveContainer>
             </Card>

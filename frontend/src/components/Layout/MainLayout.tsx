@@ -9,6 +9,7 @@ import {
   Button,
   Space,
   Typography,
+  theme,
 } from 'antd';
 import {
   DashboardOutlined,
@@ -22,9 +23,12 @@ import {
   SettingOutlined,
   HomeOutlined,
   FileTextOutlined,
+  MoonOutlined,
+  SunOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../store/authStore';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useThemeStore } from '../../store/themeStore';
 import LanguageSelector from '../LanguageSelector';
 import NotificationBell from '../NotificationBell';
 
@@ -35,9 +39,13 @@ const MainLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuthStore();
   const { settings, fetchSettings } = useSettingsStore();
+  const { mode, toggleMode } = useThemeStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+
+  const isDark = mode === 'dark';
+  const { token } = theme.useToken();
 
   useEffect(() => {
     fetchSettings();
@@ -156,9 +164,10 @@ const MainLayout: React.FC = () => {
         trigger={null}
         collapsible
         collapsed={collapsed}
-        theme="light"
+        theme={isDark ? 'dark' : 'light'}
         style={{
           boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)',
+          background: token.colorBgContainer,
         }}
       >
         <div
@@ -167,7 +176,7 @@ const MainLayout: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            borderBottom: '1px solid #f0f0f0',
+            borderBottom: `1px solid ${token.colorBorderSecondary}`,
             padding: '8px',
           }}
         >
@@ -193,7 +202,7 @@ const MainLayout: React.FC = () => {
         <Header
           style={{
             padding: '0 24px',
-            background: '#fff',
+            background: token.colorBgContainer,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -207,6 +216,12 @@ const MainLayout: React.FC = () => {
             style={{ fontSize: 16, width: 64, height: 64 }}
           />
           <Space>
+            <Button
+              type="text"
+              icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+              onClick={toggleMode}
+              style={{ fontSize: 16 }}
+            />
             <NotificationBell />
             <LanguageSelector />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
@@ -228,7 +243,7 @@ const MainLayout: React.FC = () => {
           style={{
             margin: 24,
             padding: 24,
-            background: '#fff',
+            background: token.colorBgContainer,
             borderRadius: 8,
             minHeight: 280,
           }}
