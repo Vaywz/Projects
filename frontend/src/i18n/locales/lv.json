@@ -90,8 +90,11 @@
     "deleteSuccess": "Ieraksts veiksmīgi dzēsts",
     "validation": {
       "endAfterStart": "Beigu laikam jābūt pēc sākuma laika",
-      "required": "Šis lauks ir obligāts"
-    }
+      "required": "Šis lauks ir obligāts",
+      "maxHours": "Maksimālais darba laiks ir 8 stundas",
+      "maxHoursDaily": "Maksimālais kopējais darba laiks dienā ir 8 stundas"
+    },
+    "breakNotAllowedSecondEntry": "Pārtraukums ir atļauts tikai pirmajam dienas ierakstam"
   },
   "calendar": {
     "title": "Kalendārs",

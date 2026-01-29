@@ -363,14 +363,19 @@ const OfficePage: React.FC = () => {
                   <Card
                     size="small"
                     style={{
-                      backgroundColor: isWeekend ? '#fafafa' : undefined,
+                      backgroundColor: currentPlan
+                        ? token.colorBgContainer
+                        : isWeekend
+                          ? token.colorFillQuaternary
+                          : undefined,
+                      borderColor: currentPlan ? token.colorPrimary : undefined,
                     }}
                   >
                     <Space direction="vertical" style={{ width: '100%' }}>
                       <div>
-                        <Text strong>{date.format('dddd')}</Text>
+                        <Text strong style={{ color: token.colorText }}>{date.format('dddd')}</Text>
                         <br />
-                        <Text type="secondary">{date.format('D MMMM')}</Text>
+                        <Text style={{ color: token.colorTextSecondary }}>{date.format('D MMMM')}</Text>
                       </div>
                       <Segmented
                         block

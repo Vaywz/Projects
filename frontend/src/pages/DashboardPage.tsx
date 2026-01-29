@@ -101,12 +101,29 @@ const DashboardPage: React.FC = () => {
   }, [fetchSettings]);
 
   const handleCreateEntry = async (values: any) => {
+    // Break is 60 for first entry, 0 for subsequent entries (enforced, not editable)
+    const isFirstEntry = !todaySummary?.entries || todaySummary.entries.length === 0;
+    const breakMins = isFirstEntry ? 60 : 0;
+
+    // Calculate existing work hours for the day
+    const existingWorkMinutes = todaySummary?.entries?.reduce((sum, e) => sum + (e.duration_hours * 60), 0) || 0;
+
+    // Validate max 8 hours total work time per day
+    const startMinutes = values.start_time.hour() * 60 + values.start_time.minute();
+    const endMinutes = values.end_time.hour() * 60 + values.end_time.minute();
+    const newWorkMinutes = (endMinutes - startMinutes) - breakMins;
+    const totalWorkMinutes = existingWorkMinutes + newWorkMinutes;
+    if (totalWorkMinutes > 480) {
+      message.error(t('timeEntry.validation.maxHoursDaily'));
+      return;
+    }
+
     try {
       await api.createTimeEntry({
         date: dayjs().format('YYYY-MM-DD'),
         start_time: values.start_time.format('HH:mm'),
         end_time: values.end_time.format('HH:mm'),
-        break_minutes: values.break_minutes || 0,
+        break_minutes: breakMins,
         workplace: values.workplace,
         comment: values.comment,
       });
@@ -424,7 +441,11 @@ const DashboardPage: React.FC = () => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => setEntryModalVisible(true)}
+              onClick={() => {
+                const isFirstEntry = !todaySummary?.entries || todaySummary.entries.length === 0;
+                form.setFieldsValue({ break_minutes: isFirstEntry ? 60 : 0 });
+                setEntryModalVisible(true);
+              }}
             >
               {t('timeEntry.addEntry')}
             </Button>
@@ -566,7 +587,10 @@ const DashboardPage: React.FC = () => {
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
-                  onClick={() => setEntryModalVisible(true)}
+                  onClick={() => {
+                    form.setFieldsValue({ break_minutes: 60 });
+                    setEntryModalVisible(true);
+                  }}
                   style={{ marginTop: 16 }}
                 >
                   {t('dashboard.addWorkTime')}
@@ -612,8 +636,18 @@ const DashboardPage: React.FC = () => {
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="break_minutes" label={t('timeEntry.breakMinutes')}>
-                <InputNumber min={0} max={480} style={{ width: '100%' }} />
+              <Form.Item
+                name="break_minutes"
+                label={t('timeEntry.breakMinutes')}
+                initialValue={todaySummary?.entries && todaySummary.entries.length > 0 ? 0 : 60}
+                tooltip={todaySummary?.entries && todaySummary.entries.length > 0 ? t('timeEntry.breakNotAllowedSecondEntry') : undefined}
+              >
+                <InputNumber
+                  min={0}
+                  max={480}
+                  style={{ width: '100%' }}
+                  disabled={true}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>

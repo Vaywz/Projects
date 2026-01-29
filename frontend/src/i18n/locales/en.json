@@ -90,8 +90,11 @@
     "deleteSuccess": "Entry deleted successfully",
     "validation": {
       "endAfterStart": "End time must be after start time",
-      "required": "This field is required"
-    }
+      "required": "This field is required",
+      "maxHours": "Maximum work time is 8 hours",
+      "maxHoursDaily": "Maximum total work time per day is 8 hours"
+    },
+    "breakNotAllowedSecondEntry": "Break time is only allowed for the first entry of the day"
   },
   "calendar": {
     "title": "Calendar",

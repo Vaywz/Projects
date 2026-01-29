@@ -73,6 +73,38 @@ async def create_time_entry(
         )
 
     time_entry_service = TimeEntryService(db)
+
+    # For non-admin users, enforce break time rules and daily limit
+    if current_user.role != UserRole.ADMIN:
+        existing_entries = await time_entry_service.get_user_entries_for_date(
+            current_user.id, entry_data.date
+        )
+
+        # Calculate existing work hours for the day
+        existing_work_minutes = sum(e.duration_minutes for e in existing_entries)
+
+        if existing_entries:
+            # Second or subsequent entry: break must be 0
+            if entry_data.break_minutes != 0:
+                entry_data.break_minutes = 0
+        else:
+            # First entry: break must be 60 minutes
+            if entry_data.break_minutes != 60:
+                entry_data.break_minutes = 60
+
+        # Calculate new entry work minutes
+        start_minutes = entry_data.start_time.hour * 60 + entry_data.start_time.minute
+        end_minutes = entry_data.end_time.hour * 60 + entry_data.end_time.minute
+        new_work_minutes = (end_minutes - start_minutes) - entry_data.break_minutes
+
+        # Check if total exceeds 8 hours (480 minutes)
+        total_work_minutes = existing_work_minutes + new_work_minutes
+        if total_work_minutes > 480:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Maximum total work time per day is 8 hours"
+            )
+
     try:
         entry = await time_entry_service.create(current_user.id, entry_data)
         return TimeEntryResponse.model_validate(entry)
@@ -141,6 +173,9 @@ async def update_time_entry(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="EDIT_TIME_EXPIRED"
             )
+        # Non-admin users cannot change break_minutes - keep original value
+        if entry_data.break_minutes is not None:
+            entry_data.break_minutes = entry.break_minutes
 
     try:
         updated = await time_entry_service.update(entry_id, entry_data)

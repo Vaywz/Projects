@@ -242,12 +242,29 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleCreateEntry = async (values: any) => {
+    // Break is 60 for first entry, 0 for subsequent entries (enforced, not editable)
+    const isFirstEntry = !daySummary?.entries || daySummary.entries.length === 0;
+    const breakMins = isFirstEntry ? 60 : 0;
+
+    // Calculate existing work hours for the day
+    const existingWorkMinutes = daySummary?.entries?.reduce((sum, e) => sum + (e.duration_hours * 60), 0) || 0;
+
+    // Validate max 8 hours total work time per day
+    const startMinutes = values.start_time.hour() * 60 + values.start_time.minute();
+    const endMinutes = values.end_time.hour() * 60 + values.end_time.minute();
+    const newWorkMinutes = (endMinutes - startMinutes) - breakMins;
+    const totalWorkMinutes = existingWorkMinutes + newWorkMinutes;
+    if (totalWorkMinutes > 480) {
+      message.error(t('timeEntry.validation.maxHoursDaily'));
+      return;
+    }
+
     try {
       await api.createTimeEntry({
         date: selectedDate.format('YYYY-MM-DD'),
         start_time: values.start_time.format('HH:mm'),
         end_time: values.end_time.format('HH:mm'),
-        break_minutes: values.break_minutes || 0,
+        break_minutes: breakMins,
         workplace: values.workplace,
         comment: values.comment,
       });
@@ -264,6 +281,44 @@ const CalendarPage: React.FC = () => {
   };
 
   const showEditTimeExpiredModal = (entry: TimeEntry, action: 'edit' | 'delete') => {
+    // Admins can edit directly without request
+    if (user?.role === 'admin') {
+      if (action === 'edit') {
+        setEditingEntry(entry);
+        form.setFieldsValue({
+          start_time: dayjs(entry.start_time, 'HH:mm:ss'),
+          end_time: dayjs(entry.end_time, 'HH:mm:ss'),
+          break_minutes: entry.break_minutes,
+          workplace: entry.workplace,
+          comment: entry.comment,
+        });
+        setEntryModalVisible(true);
+      } else {
+        // Direct delete for admin
+        Modal.confirm({
+          title: t('calendar.confirmDelete'),
+          icon: <ExclamationCircleOutlined />,
+          content: t('calendar.confirmDeleteMessage'),
+          okText: t('common.delete'),
+          okType: 'danger',
+          cancelText: t('common.cancel'),
+          onOk: async () => {
+            try {
+              await api.deleteTimeEntry(entry.id);
+              message.success(t('calendar.entryDeleted'));
+              fetchMonthData(currentMonth);
+              const summary = await api.getDaySummary(selectedDate.format('YYYY-MM-DD'));
+              setDaySummary(summary);
+            } catch (error: any) {
+              message.error(error.response?.data?.detail || t('errors.somethingWentWrong'));
+            }
+          },
+        });
+      }
+      return;
+    }
+
+    // Regular users need to request change
     Modal.confirm({
       title: t('errors.editTimeExpiredTitle'),
       icon: <ExclamationCircleOutlined />,
@@ -290,11 +345,24 @@ const CalendarPage: React.FC = () => {
 
   const handleEditEntry = async (values: any) => {
     if (!editingEntry) return;
+
+    // Keep the existing break value (user can't change it)
+    const breakMins = editingEntry.break_minutes;
+
+    // Validate max 8 hours work time
+    const startMinutes = values.start_time.hour() * 60 + values.start_time.minute();
+    const endMinutes = values.end_time.hour() * 60 + values.end_time.minute();
+    const workMinutes = (endMinutes - startMinutes) - breakMins;
+    if (workMinutes > 480) {
+      message.error(t('timeEntry.validation.maxHours'));
+      return;
+    }
+
     try{
       await api.updateTimeEntry(editingEntry.id, {
         start_time: values.start_time.format('HH:mm'),
         end_time: values.end_time.format('HH:mm'),
-        break_minutes: values.break_minutes || 0,
+        break_minutes: breakMins,
         workplace: values.workplace,
         comment: values.comment,
       });
@@ -367,6 +435,18 @@ const CalendarPage: React.FC = () => {
   };
 
   const handleCreateChangeRequest = async (values: any) => {
+    // Determine break minutes based on request type
+    let breakMins = values.break_minutes;
+    if (values.request_type === 'add') {
+      // For new entry: 60 for first entry, 0 for subsequent
+      const hasExistingEntries = daySummary?.entries && daySummary.entries.length > 0;
+      breakMins = hasExistingEntries ? 0 : 60;
+    } else if (values.request_type === 'edit') {
+      // For edit: keep the original entry's break value
+      const selectedEntry = daySummary?.entries?.find(e => e.id === values.time_entry_id);
+      breakMins = selectedEntry?.break_minutes ?? 60;
+    }
+
     try {
       await api.createChangeRequest({
         request_type: values.request_type,
@@ -374,7 +454,7 @@ const CalendarPage: React.FC = () => {
         date: changeRequestDate || selectedDate.format('YYYY-MM-DD'),
         start_time: values.start_time?.format('HH:mm'),
         end_time: values.end_time?.format('HH:mm'),
-        break_minutes: values.break_minutes,
+        break_minutes: breakMins,
         workplace: values.workplace,
         comment: values.comment,
         reason: values.reason,
@@ -391,12 +471,24 @@ const CalendarPage: React.FC = () => {
   const handleWeeklyEntrySubmit = async (values: any) => {
     if (!currentFillingDay) return;
 
+    // Break is always 60 minutes for first entry (weekly reminder only shows days without entries)
+    const breakMins = 60;
+
+    // Validate max 8 hours work time
+    const startMinutes = values.start_time.hour() * 60 + values.start_time.minute();
+    const endMinutes = values.end_time.hour() * 60 + values.end_time.minute();
+    const workMinutes = (endMinutes - startMinutes) - breakMins;
+    if (workMinutes > 480) {
+      message.error(t('timeEntry.validation.maxHours'));
+      return;
+    }
+
     try {
       await api.createTimeEntry({
         date: currentFillingDay.format('YYYY-MM-DD'),
         start_time: values.start_time.format('HH:mm'),
         end_time: values.end_time.format('HH:mm'),
-        break_minutes: values.break_minutes || 0,
+        break_minutes: breakMins,
         workplace: values.workplace,
         comment: values.comment,
       });
@@ -642,23 +734,43 @@ const CalendarPage: React.FC = () => {
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
               <Button onClick={() => setDetailModalVisible(false)}>{t('common.close')}</Button>
               {isPastDate ? (
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={() => {
-                    changeRequestForm.resetFields();
-                    setChangeRequestDate(null); // Use selectedDate for regular requests
-                    setChangeRequestModalVisible(true);
-                  }}
-                >
-                  {t('changeRequest.requestChange')}
-                </Button>
+                user?.role === 'admin' ? (
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      const isFirstEntry = !daySummary?.entries || daySummary.entries.length === 0;
+                      form.setFieldsValue({ break_minutes: isFirstEntry ? 60 : 0 });
+                      setEntryModalVisible(true);
+                    }}
+                  >
+                    {t('calendar.addWorkTime')}
+                  </Button>
+                ) : (
+                  <Button
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={() => {
+                      changeRequestForm.resetFields();
+                      const isFirstEntry = !daySummary?.entries || daySummary.entries.length === 0;
+                      changeRequestForm.setFieldsValue({ break_minutes: isFirstEntry ? 60 : 0 });
+                      setChangeRequestDate(null); // Use selectedDate for regular requests
+                      setChangeRequestModalVisible(true);
+                    }}
+                  >
+                    {t('changeRequest.requestChange')}
+                  </Button>
+                )
               ) : canAddEntry ? (
                 <Tooltip title={selectedStatus?.status === 'sick' || selectedStatus?.status === 'vacation' ? t('calendar.pastDateWarning') : ''}>
                   <Button
                     type="primary"
                     icon={<PlusOutlined />}
-                    onClick={() => setEntryModalVisible(true)}
+                    onClick={() => {
+                      const isFirstEntry = !daySummary?.entries || daySummary.entries.length === 0;
+                      form.setFieldsValue({ break_minutes: isFirstEntry ? 60 : 0 });
+                      setEntryModalVisible(true);
+                    }}
                     disabled={selectedStatus?.status === 'sick' || selectedStatus?.status === 'vacation'}
                   >
                     {t('calendar.addWorkTime')}
@@ -786,8 +898,13 @@ const CalendarPage: React.FC = () => {
           >
             <TimePicker format="HH:mm" style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="break_minutes" label={t('timeEntry.breakMinutes')}>
-            <InputNumber min={0} max={480} style={{ width: '100%' }} />
+          <Form.Item
+            name="break_minutes"
+            label={t('timeEntry.breakMinutes')}
+            initialValue={60}
+            tooltip={daySummary?.entries && daySummary.entries.length > 0 ? t('timeEntry.breakNotAllowedSecondEntry') : undefined}
+          >
+            <InputNumber min={0} max={480} style={{ width: '100%' }} disabled={true} />
           </Form.Item>
           <Form.Item
             name="workplace"
@@ -955,7 +1072,7 @@ const CalendarPage: React.FC = () => {
                         <TimePicker format="HH:mm" style={{ width: '100%' }} />
                       </Form.Item>
                       <Form.Item name="break_minutes" label={t('timeEntry.breakMinutes')}>
-                        <InputNumber min={0} max={480} style={{ width: '100%' }} />
+                        <InputNumber min={0} max={480} style={{ width: '100%' }} disabled={true} />
                       </Form.Item>
                       <Form.Item
                         name="workplace"
@@ -1070,7 +1187,7 @@ const CalendarPage: React.FC = () => {
                   label={t('timeEntry.breakMinutes')}
                   style={{ marginBottom: 8 }}
                 >
-                  <InputNumber min={0} max={480} style={{ width: 80 }} />
+                  <InputNumber min={0} max={480} style={{ width: 80 }} disabled={true} />
                 </Form.Item>
               </Space>
 
