@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="style.css" />
+
+    <script src="https://unpkg.com/ionicons@5.4.0/dist/ionicons.js"></script>
+    <title>Weather</title>
+  </head>
+  <body>
+    <!-- <header class="header">
+      <a href="#">
+        <img
+          class="logo"
+          alt="logo"
+          src="img/770b805d5c99c7931366c2e84e88f251.png"
+        />
+      </a>
+    </header> -->
+    <div class="container">
+      <div class="search">
+        <!-- <label for="text" style="font-size: 3rem">Enter a City</label><br /> -->
+        <ion-icon class="location-icon" name="location-outline"></ion-icon>
+        <input type="text" id="text" placeholder="Riga" />
+        <button class="search-btn">
+          <ion-icon class="search-icon" name="search-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="not-found">
+        <img
+          class="error-image"
+          src="img/summer-sun-error-404-flash-message-sunshine-heat-weather-forecast-sonne-hitze-empty-state-ui-design-page-not-found-popup-cartoon-image-flat-illustration-concept-on-white-background-vector.jpg"
+        />
+        <p class="error-message">This country doesn't exist</p>
+      </div>
+
+      <div class="weather-box">
+        <img src="" />
+        <p class="temperature"></p>
+        <p class="description"></p>
+      </div>
+
+      <div class="weather-details">
+        <div class="humidity">
+          <i class="fa-solid fa-water"></i>
+          <div class="text">
+            <span></span>
+            <p>Humidity</p>
+          </div>
+        </div>
+
+        <div class="wind">
+          <i class="fa-solid fa-wind"></i>
+          <div class="text">
+            <span></span>
+            <p>Wind Speed</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://kit.fontawesome.com/7c8801c017.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="index.js"></script>
+  </body>
+</html>

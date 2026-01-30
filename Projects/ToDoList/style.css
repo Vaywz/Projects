@@ -1,0 +1,100 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 62.5%;
+  /* overflow-x: hidden; */
+}
+
+body {
+  font-family: "Rubik", sans-serif;
+  line-height: 1;
+  font-weight: 400;
+  color: #555;
+
+  overflow-x: hidden;
+}
+
+.header {
+  padding: 5rem;
+  background-color: navajowhite;
+}
+
+h2 {
+  font-size: 4.8rem;
+  display: flex;
+  justify-content: center;
+  margin: 1.2rem;
+}
+
+.enter {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.input {
+  font-size: 3rem;
+  border: none;
+  margin: 0;
+  border-radius: 0%;
+}
+
+.add-btn {
+  border: none;
+  font-size: 3rem;
+  background-color: palegreen;
+  cursor: pointer;
+  transition: 0.3s;
+  border-radius: 0%;
+  color: black;
+}
+
+.add-btn:hover {
+  background-color: ghostwhite;
+  color: brown;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+}
+
+.list li {
+  cursor: pointer;
+  position: relative;
+  padding: 1rem 0.8rem 1rem 3.5rem;
+  background-color: khaki;
+  font-size: 2.4rem;
+  transition: 0.3s;
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.list li:nth-child(even) {
+  background-color: burlywood;
+}
+
+.list li.checked {
+  background-color: silver;
+  color: #fff;
+  text-decoration: line-through;
+}
+
+.close {
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 1rem 1.3rem 1rem 1.3rem;
+}
+
+.close:hover {
+  background-color: aliceblue;
+  color: black;
+}
