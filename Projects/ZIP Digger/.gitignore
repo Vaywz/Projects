@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.Python
+.venv/
+venv/
+env/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data
+uploads/
+output/
+merge_output/
+split_output/
+temp_extracted/
+*.zip
+
+# Local tooling
+.claude/
+.repo_work/
+
+# Local native dependency bundle
+vips_lib/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
