@@ -14,8 +14,12 @@
     "back": "Back",
     "next": "Next",
     "submit": "Submit",
+    "daysSelected": "{{count}} day(s) selected",
+    "confirmSubmitTitle": "Confirm submission",
+    "confirmSubmitMessage": "Are you sure you want to submit for {{count}} day(s)?",
     "reset": "Reset",
     "close": "Close",
+    "view": "View",
     "actions": "Actions",
     "status": "Status",
     "date": "Date",
@@ -27,7 +31,11 @@
     "export": "Export",
     "all": "All",
     "selectEmployee": "Select employee",
-    "more": "more"
+    "more": "more",
+    "day": "Day",
+    "month": "Month",
+    "hoursShort": "h",
+    "minutesShort": "m"
   },
   "auth": {
     "login": "Login",
@@ -92,9 +100,23 @@
       "endAfterStart": "End time must be after start time",
       "required": "This field is required",
       "maxHours": "Maximum work time is 8 hours",
-      "maxHoursDaily": "Maximum total work time per day is 8 hours"
+      "maxHoursDaily": "Maximum total work time per day is 8 hours",
+      "maxHoursWeekly": "Maximum total work time per week is 40 hours"
     },
-    "breakNotAllowedSecondEntry": "Break time is only allowed for the first entry of the day"
+    "maxBreak60Minutes": "Max 60 minutes total break per day",
+    "overtime": {
+      "title": "Work time exceeds 8 hours",
+      "message": "Your total work time for the day will be {{hours}}h {{minutes}}min (overtime: {{overtime}}min). What would you like to do?",
+      "adjustTime": "Adjust time",
+      "submitRequest": "Request approval",
+      "weeklyTitle": "Weekly work time exceeds 40 hours",
+      "weeklyMessage": "Your total work time for the week will be {{hours}}h {{minutes}}min (overtime: {{overtime}}min). What would you like to do?",
+      "monthlyTitle": "Monthly work time exceeds limit",
+      "monthlyMessage": "Your total work time for the month will be {{hours}}h {{minutes}}min (limit: {{limit}}h). What would you like to do?"
+    },
+    "breakNotAllowedSecondEntry": "Break time is only allowed for the first entry of the day",
+    "breakChangeRequestRequired": "To change break for entries over 8 hours, a request is required",
+    "breakChangeRequestHint": "Use the calendar to request a break change"
   },
   "calendar": {
     "title": "Calendar",
@@ -107,6 +129,9 @@
     "vacation": "Vacation",
     "sickDay": "Sick Day",
     "excusedAbsence": "Excused Absence",
+    "unexcusedAbsence": "Unexcused Absence",
+    "holidayStatus": "Holiday",
+    "dayoff": "Day Off",
     "hoursWorked": "Hours worked",
     "noEntries": "No entries",
     "noTimeLogs": "No time logs",
@@ -117,9 +142,55 @@
     "weeklyReminder": {
       "title": "Fill in your work time",
       "message": "You have {{count}} unfilled working days this week",
-      "skip": "Skip",
-      "saveAndNext": "Save and next"
-    }
+      "selectDays": "Select days",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all",
+      "schedule": "Work schedule",
+      "applySchedule": "Apply schedule",
+      "entriesCreated": "{{count}} entries created successfully",
+      "selectAtLeastOne": "Please select at least one day"
+    },
+    "bulkEntry": {
+      "title": "Bulk Time Entry",
+      "selectPeriod": "Select date range",
+      "availableDays": "{{count}} available working days in selected period",
+      "noDaysAvailable": "No available working days in the selected period",
+      "successDirect": "{{count}} entries created successfully",
+      "successRequests": "{{count}} change requests submitted",
+      "blockedWeekend": "Weekend",
+      "blockedHoliday": "Holiday",
+      "blockedHasEntry": "Already has entry",
+      "blockedHasStatus": "Has vacation/sick/day off",
+      "blockedPending": "Pending request"
+    },
+    "scheduleTemplate": {
+      "manage": "Schedule Templates",
+      "add": "Add Template",
+      "addTitle": "New Schedule Template",
+      "editTitle": "Edit Schedule Template",
+      "name": "Name",
+      "namePlaceholder": "e.g. Standard week",
+      "useTemplate": "Use template",
+      "selectPlaceholder": "Choose a template...",
+      "saveDayTemplate": "Save day as template",
+      "saveDayTemplateTitle": "Save day template",
+      "dayTemplateDefaultName": "Day template",
+      "noWorkTimeInTemplate": "This template has no work time to apply",
+      "noTemplates": "No templates yet",
+      "emptyHint": "You have no schedule templates yet. Create one to quickly fill multiple days.",
+      "cancelTemplate": "Cancel template",
+      "createSuccess": "Template created",
+      "updateSuccess": "Template updated",
+      "deleteSuccess": "Template deleted",
+      "deleteConfirm": "Delete this template?",
+      "short": {
+        "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun"
+      }
+    },
+    "pending": "Pending",
+    "pendingRequest": "Awaiting admin approval",
+    "pendingRequestBlocked": "Cannot add entries while a change request is pending. Wait for admin approval.",
+    "weekendWarning": "Weekends require administrator approval. Please submit a change request."
   },
   "statistics": {
     "title": "Statistics",
@@ -156,7 +227,18 @@
     "workingDays": "Working Days",
     "failedToLoadEmployees": "Failed to load employees",
     "failedToLoadSummary": "Failed to load summary",
-    "failedToLoadStats": "Failed to load employee stats"
+    "failedToLoadStats": "Failed to load employee stats",
+    "normHours": "Working Hours Norm",
+    "normWeek": "Per Week",
+    "normMonth": "Per Month",
+    "normYear": "Per Year",
+    "workingDaysCount": "working days",
+    "maxHours": "Max hours",
+    "myStatistics": "My statistics",
+    "employeeProgress": "Employee progress",
+    "overtimeLabel": "Overtime",
+    "hoursProgress": "Hours progress",
+    "remaining": "Remaining"
   },
   "office": {
     "title": "Who's in the Office?",
@@ -179,6 +261,7 @@
       "sick": "Sick",
       "vacation": "Vac.",
       "excused": "Exc.",
+      "dayoff": "Off",
       "noPlan": "-"
     }
   },
@@ -205,6 +288,7 @@
     "mySchedule": "My Vacations & Sick Days",
     "noVacations": "No scheduled vacations",
     "noSickDays": "No sick days",
+    "noDayOffs": "No day offs",
     "editVacation": "Edit Vacation",
     "updateSuccess": "Vacation updated successfully",
     "startDateLocked": "Start date cannot be changed because the vacation has already started"
@@ -229,8 +313,11 @@
       "role": "Role",
       "roles": {
         "employee": "Employee",
-        "admin": "Admin"
+        "admin": "Admin",
+        "itOnly": "IT only"
       },
+      "isEmployee": "Visible in calendar",
+      "isEmployeeHint": "If disabled, user won't appear in calendar and statistics",
       "isActive": "Active",
       "inactive": "Inactive",
       "activate": "Activate",
@@ -241,6 +328,13 @@
       "addSuccess": "Employee added successfully",
       "updateSuccess": "Employee updated successfully",
       "deleteSuccess": "Employee deleted successfully",
+      "current": "Current",
+      "archive": "Archive",
+      "moveToArchive": "Move to archive",
+      "archiveSuccess": "Employee moved to archive",
+      "restoreFromArchive": "Restore from archive",
+      "restoreConfirm": "Are you sure you want to restore this employee from archive?",
+      "restoreSuccess": "Employee restored from archive",
       "workEmail": "Work Email",
       "employmentType": "Employment Type",
       "fullTime": "Full-time",
@@ -252,10 +346,14 @@
       "nameDay": "Name Day",
       "contractNumber": "Contract Number",
       "employmentStartDate": "Employment Start Date",
+      "employmentEndDate": "Employment End Date",
+      "employmentEndReason": "Employment End Reason",
       "emergencyContact": "Emergency Contact",
       "emergencyContactName": "Contact Person Name",
       "emergencyContactPhone": "Contact Person Phone",
       "declaredAddress": "Declared Address",
+      "actualAddress": "Actual Address",
+      "personalCode": "Personal Code",
       "department": "Department"
     },
     "reports": {
@@ -263,7 +361,8 @@
       "generate": "Generate Report",
       "dateRange": "Date Range",
       "exportExcel": "Export to Excel",
-      "exportPdf": "Export to PDF"
+      "exportPdf": "Export to PDF",
+      "exportCsv": "Export to CSV"
     },
     "holidays": {
       "title": "Holidays",
@@ -278,7 +377,10 @@
       "entries": "Entries",
       "working": "Working",
       "absent": "No entries",
-      "total": "Total employees"
+      "total": "Total employees",
+      "setStatus": "Set Status",
+      "clearStatus": "Clear Status",
+      "statusCleared": "Status cleared"
     },
     "calendar": {
       "title": "Team Calendar",
@@ -308,7 +410,10 @@
       "selectIcon": "Select Icon",
       "saveSuccess": "Settings saved successfully",
       "uploadSuccess": "Logo uploaded successfully",
-      "deleteSuccess": "Logo deleted successfully"
+      "deleteSuccess": "Logo deleted successfully",
+      "notifications": "Notifications",
+      "emailNotifications": "Email notifications",
+      "emailNotificationsHint": "Send email notifications to admins about new requests and reminders"
     }
   },
   "profile": {
@@ -322,7 +427,12 @@
     "uploadAvatar": "Upload Avatar",
     "bankAccount": "Bank Account",
     "updateSuccess": "Profile updated successfully",
-    "passwordChangeSuccess": "Password changed successfully"
+    "passwordChangeSuccess": "Password changed successfully",
+    "emailNotifications": "Email notifications",
+    "notifyMissingEntries": "Missing entries",
+    "notifyWeeklyReminder": "Weekly reminder",
+    "notifyBirthdays": "Birthdays",
+    "notifyNameDays": "Name days"
   },
   "settings": {
     "title": "Settings",
@@ -334,14 +444,44 @@
     "emailNotifications": "Email Notifications"
   },
   "errors": {
+    "required": "This field is required",
     "somethingWentWrong": "Something went wrong",
     "networkError": "Network error. Please check your connection.",
     "unauthorized": "Unauthorized. Please login again.",
     "forbidden": "You don't have permission to perform this action.",
     "notFound": "Resource not found.",
     "serverError": "Server error. Please try again later.",
-    "editTimeExpired": "Editing time has expired (30 minutes). Please submit a change request.",
-    "editTimeExpiredTitle": "Cannot Edit"
+    "editTimeExpired": "Cannot edit past entries. Please submit a change request.",
+    "editTimeExpiredTitle": "Cannot Edit",
+    "maxWorkTime8Hours": "Maximum work time is 8 hours",
+    "maxBreakTime60Minutes": "Maximum total break time is 60 minutes per day",
+    "endTimeAfterStart": "End time must be after start time",
+    "timeEntryOverlaps": "Time entry overlaps with an existing entry",
+    "vacationOverlaps": "Vacation overlaps with existing vacation",
+    "dayHasStatus": "This day already has a vacation, sick day, or day off",
+    "dayHasEntries": "This day already has time entries",
+    "dayHasVacation": "This day already has a vacation",
+    "vacationHasStatus": "Vacation period already has a sick day or day off",
+    "cannotCreateBeyondWeek": "Cannot create entries beyond current week",
+    "cannotCreateBeyondNextMonth": "Cannot create entries beyond next month",
+    "timeEntryNotFound": "Time entry not found",
+    "employeeNotFound": "Employee not found",
+    "invalidTimeFormat": "Invalid time format",
+    "invalidDateFormat": "Invalid date format",
+    "failedToLoadCalendarData": "Failed to load calendar data",
+    "failedToLoadDayDetails": "Failed to load day details",
+    "failedToCreateEntry": "Failed to create entry",
+    "failedToUpdateEntry": "Failed to update entry",
+    "failedToDeleteEntry": "Failed to delete entry",
+    "failedToLoadData": "Failed to load data",
+    "maxWeeklyHours": "Maximum total work time per week is 40 hours",
+    "maxMonthlyHours": "Maximum total work time per month is {{hours}} hours",
+    "firstEntryBreakRequired": "First time entry of the day must have 60 minutes break",
+    "onlyFirstEntryCanHaveBreak": "Only the first entry of the day can have break time",
+    "cannotDeletePastDayOff": "Cannot delete day off for past dates",
+    "cannotCreateEntrySickDay": "Cannot create time entry for a day marked as sick",
+    "cannotCreateEntryVacation": "Cannot create time entry for a day marked as vacation",
+    "cannotCreateEntryDayOff": "Cannot create time entry for a day marked as day off"
   },
   "days": {
     "monday": "Monday",
@@ -394,6 +534,12 @@
     },
     "adminComment": "Admin Comment",
     "adminCommentPlaceholder": "Add a comment (optional)...",
+    "monthlyHours": "Hours worked this month",
+    "availableHours": "available",
+    "exceedsMonthlyLimit": "Approving this request will exceed monthly norm: {{projected}}h / {{norm}}h (+{{overtime}}h overtime)",
+    "overtypeDaily": "Daily limit exceeded (>8h)",
+    "overtypeWeekly": "Weekly limit exceeded (>40h)",
+    "overtypeMonthly": "Monthly limit exceeded",
     "approve": "Approve",
     "reject": "Reject",
     "employee": "Employee",
@@ -405,7 +551,32 @@
     "deleteSuccess": "Request deleted",
     "deleteConfirm": "Are you sure you want to delete this request?",
     "noRequests": "No change requests",
-    "pendingRequests": "pending requests"
+    "pendingRequests": "pending requests",
+    "submittedAt": "Submitted",
+    "pastDayTitle": "Change Past Day",
+    "pastDayMessage": "This day has already passed. To edit, you need to submit a request to the administrator.",
+    "pastDayDeleteMessage": "This day has already passed. To delete, you need to submit a request to the administrator.",
+    "submit": "Submit Request",
+    "weeklyLimitExceeded": "Weekly Hours Limit Exceeded",
+    "weeklyLimitMessage": "Cannot add entries for {{dates}} - weekly limit of 40 hours would be exceeded. Would you like to submit a change request?",
+    "submitRequest": "Submit Request",
+    "weeklyLimitReason": "Request to exceed weekly 40-hour limit",
+    "requestsSubmitted": "{{count}} request(s) submitted successfully",
+    "editBeforeApprove": "Edit",
+    "overlapsWithPending": "Time entry overlaps with a pending request",
+    "deleteSelected": "Delete ({{count}})",
+    "bulkDeleteConfirm": "Are you sure you want to delete {{count}} request(s)?",
+    "bulkDeleteSuccess": "{{count}} request(s) deleted"
+  },
+  "birthday": {
+    "upcomingBirthdays": "Upcoming Birthdays",
+    "today": "Today!",
+    "inDays": "In {{days}} days"
+  },
+  "nameDay": {
+    "upcomingNameDays": "Upcoming Name Days",
+    "today": "Today!",
+    "inDays": "In {{days}} days"
   },
   "notification": {
     "changeRequest": {
@@ -415,6 +586,18 @@
     "missingEntry": {
       "title": "Missing Time Entries",
       "message": "Please fill in your work hours for: {{dates}}"
+    },
+    "overtime": {
+      "weeklyTitle": "Weekly Overtime Warning",
+      "monthlyTitle": "Monthly Overtime Warning",
+      "weeklyMessage": "{{employee_name}} will exceed 40h weekly limit. Current: {{current_hours}}h, Projected: {{projected_hours}}h",
+      "monthlyMessage": "{{employee_name}} will exceed {{limit_hours}}h monthly limit. Current: {{current_hours}}h, Projected: {{projected_hours}}h"
+    },
+    "birthday": {
+      "todayTitle": "Birthday Today!",
+      "todayMessage": "{{name}} has a birthday today!",
+      "upcomingTitle": "Upcoming Birthday",
+      "upcomingMessage": "{{name}} will have a birthday in 2 days ({{date}})"
     }
   }
 }

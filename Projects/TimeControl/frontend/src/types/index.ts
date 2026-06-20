@@ -1,13 +1,14 @@
 // User types
 export type UserRole = 'employee' | 'admin';
-export type EmploymentType = 'full_time' | 'part_time';
-export type PaymentType = 'salary' | 'hourly';
+export type EmploymentType = string;
+export type PaymentType = string;
 
 export interface User {
   id: number;
   email: string;
   role: UserRole;
   is_active: boolean;
+  is_employee: boolean;
   created_at: string;
   profile?: EmployeeProfile;
 }
@@ -30,9 +31,13 @@ export interface EmployeeProfile {
   name_day?: string;
   contract_number?: string;
   employment_start_date?: string;
+  employment_end_date?: string;
+  employment_end_reason?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   declared_address?: string;
+  actual_address?: string;
+  personal_code?: string;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +60,28 @@ export interface CalendarMonth {
   year: number;
   month: number;
   days: CalendarDay[];
+}
+
+// Work Schedule Template types
+export type WeekdayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+export interface ScheduleDay {
+  enabled: boolean;
+  start: string; // HH:mm
+  end: string;   // HH:mm
+  break: number; // minutes
+  workplace: 'office' | 'remote' | 'dayoff';
+}
+
+export type WeeklySchedule = Record<WeekdayKey, ScheduleDay>;
+
+export interface WorkScheduleTemplate {
+  id: number;
+  user_id: number;
+  name: string;
+  schedule: WeeklySchedule;
+  created_at: string;
+  updated_at: string;
 }
 
 // Time Entry types
@@ -95,7 +122,7 @@ export interface DaySummary {
 }
 
 // Day Status types
-export type StatusType = 'normal' | 'sick' | 'vacation' | 'excused';
+export type StatusType = 'normal' | 'sick' | 'vacation' | 'excused' | 'unexcused' | 'holiday' | 'dayoff';
 
 export interface DayStatus {
   id: number;
@@ -202,7 +229,7 @@ export interface OfficePresenceResponse {
   count: number;
 }
 
-export type EmployeeStatus = 'office' | 'remote' | 'sick' | 'vacation' | 'excused' | 'no_plan';
+export type EmployeeStatus = 'office' | 'remote' | 'sick' | 'vacation' | 'excused' | 'unexcused' | 'holiday' | 'dayoff' | 'no_plan';
 
 export interface EmployeeWithStatus {
   user_id: number;
@@ -242,6 +269,9 @@ export interface CompanySettings {
   icon_remote: string;
   icon_holiday: string;
   icon_excused: string;
+  icon_unexcused: string;
+  icon_dayoff: string;
+  email_notifications_enabled: boolean;
 }
 
 export interface IconSettingsUpdate {
@@ -251,6 +281,8 @@ export interface IconSettingsUpdate {
   icon_remote?: string;
   icon_holiday?: string;
   icon_excused?: string;
+  icon_unexcused?: string;
+  icon_dayoff?: string;
 }
 
 export interface AllowedIconsResponse {
@@ -319,7 +351,7 @@ export interface DepartmentCreate {
 }
 
 // Notification types
-export type NotificationType = 'birthday' | 'name_day' | 'change_request' | 'weekly_reminder' | 'missing_entry' | 'system';
+export type NotificationType = 'birthday' | 'name_day' | 'change_request' | 'weekly_reminder' | 'missing_entry' | 'overtime_warning' | 'system';
 
 export interface Notification {
   id: number;

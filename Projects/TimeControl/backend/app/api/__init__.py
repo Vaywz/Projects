@@ -12,6 +12,7 @@ from .workplace_plan import router as workplace_plan_router
 from .change_requests import router as change_requests_router
 from .departments import router as departments_router
 from .notifications import router as notifications_router
+from .work_schedule_templates import router as work_schedule_templates_router
 
 api_router = APIRouter()
 
@@ -28,3 +29,4 @@ api_router.include_router(change_requests_router, prefix="/change-requests", tag
 api_router.include_router(admin_router, prefix="/admin", tags=["admin"])
 api_router.include_router(departments_router, prefix="/departments", tags=["departments"])
 api_router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(work_schedule_templates_router, prefix="/work-schedule-templates", tags=["work-schedule-templates"])

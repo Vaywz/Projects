@@ -14,8 +14,12 @@
     "back": "Назад",
     "next": "Далее",
     "submit": "Отправить",
+    "daysSelected": "Выбрано дней: {{count}}",
+    "confirmSubmitTitle": "Подтверждение",
+    "confirmSubmitMessage": "Вы уверены, что хотите отправить за {{count}} дн.?",
     "reset": "Сбросить",
     "close": "Закрыть",
+    "view": "Просмотр",
     "actions": "Действия",
     "status": "Статус",
     "date": "Дата",
@@ -27,7 +31,11 @@
     "export": "Экспорт",
     "all": "Все",
     "selectEmployee": "Выберите сотрудника",
-    "more": "ещё"
+    "more": "ещё",
+    "day": "День",
+    "month": "Месяц",
+    "hoursShort": "ч",
+    "minutesShort": "м"
   },
   "auth": {
     "login": "Вход",
@@ -92,9 +100,23 @@
       "endAfterStart": "Время окончания должно быть позже времени начала",
       "required": "Это поле обязательно",
       "maxHours": "Максимальное рабочее время — 8 часов",
-      "maxHoursDaily": "Максимальное рабочее время за день — 8 часов"
+      "maxHoursDaily": "Максимальное рабочее время за день — 8 часов",
+      "maxHoursWeekly": "Максимальное рабочее время за неделю — 40 часов"
     },
-    "breakNotAllowedSecondEntry": "Перерыв разрешён только для первой записи за день"
+    "maxBreak60Minutes": "Макс. 60 минут перерыва за день",
+    "overtime": {
+      "title": "Рабочее время превышает 8 часов",
+      "message": "Ваше общее рабочее время за день составит {{hours}}ч {{minutes}}мин (превышение: {{overtime}}мин). Что вы хотите сделать?",
+      "adjustTime": "Изменить время",
+      "submitRequest": "Запросить одобрение",
+      "weeklyTitle": "Недельное рабочее время превышает 40 часов",
+      "weeklyMessage": "Ваше общее рабочее время за неделю составит {{hours}}ч {{minutes}}мин (превышение: {{overtime}}мин). Что вы хотите сделать?",
+      "monthlyTitle": "Месячное рабочее время превышает норму",
+      "monthlyMessage": "Ваше общее рабочее время за месяц составит {{hours}}ч {{minutes}}мин (лимит: {{limit}}ч). Что вы хотите сделать?"
+    },
+    "breakNotAllowedSecondEntry": "Перерыв разрешён только для первой записи за день",
+    "breakChangeRequestRequired": "Для изменения перерыва в записях более 8 часов требуется запрос",
+    "breakChangeRequestHint": "Используйте календарь для запроса изменения перерыва"
   },
   "calendar": {
     "title": "Календарь",
@@ -107,6 +129,9 @@
     "vacation": "Отпуск",
     "sickDay": "Больничный",
     "excusedAbsence": "Оправданный пропуск",
+    "unexcusedAbsence": "Неоправданный пропуск",
+    "holidayStatus": "Выходной",
+    "dayoff": "Выходной (неполн.)",
     "hoursWorked": "Отработано часов",
     "noEntries": "Нет записей",
     "noTimeLogs": "Нет рабочих часов",
@@ -117,9 +142,55 @@
     "weeklyReminder": {
       "title": "Заполните рабочее время",
       "message": "У вас {{count}} незаполненных рабочих дней на этой неделе",
-      "skip": "Пропустить",
-      "saveAndNext": "Сохранить и далее"
-    }
+      "selectDays": "Выберите дни",
+      "selectAll": "Выбрать все",
+      "deselectAll": "Снять выбор",
+      "schedule": "Рабочее расписание",
+      "applySchedule": "Применить расписание",
+      "entriesCreated": "Создано {{count}} записей",
+      "selectAtLeastOne": "Выберите хотя бы один день"
+    },
+    "bulkEntry": {
+      "title": "Массовое заполнение",
+      "selectPeriod": "Выберите период",
+      "availableDays": "{{count}} доступных рабочих дней в выбранном периоде",
+      "noDaysAvailable": "Нет доступных рабочих дней в выбранном периоде",
+      "successDirect": "Создано {{count}} записей",
+      "successRequests": "Отправлено {{count}} запросов на изменение",
+      "blockedWeekend": "Выходной",
+      "blockedHoliday": "Праздник",
+      "blockedHasEntry": "Уже есть запись",
+      "blockedHasStatus": "Отпуск/больничный/отгул",
+      "blockedPending": "Ожидающий запрос"
+    },
+    "scheduleTemplate": {
+      "manage": "Шаблоны графика",
+      "add": "Добавить шаблон",
+      "addTitle": "Новый шаблон графика",
+      "editTitle": "Редактировать шаблон",
+      "name": "Название",
+      "namePlaceholder": "напр. Стандартная неделя",
+      "useTemplate": "Использовать шаблон",
+      "selectPlaceholder": "Выберите шаблон...",
+      "saveDayTemplate": "Сохранить день как шаблон",
+      "saveDayTemplateTitle": "Сохранить шаблон дня",
+      "dayTemplateDefaultName": "Шаблон дня",
+      "noWorkTimeInTemplate": "В этом шаблоне нет рабочего времени для применения",
+      "noTemplates": "Шаблонов пока нет",
+      "emptyHint": "У вас пока нет шаблонов графика. Создайте, чтобы быстро заполнять несколько дней.",
+      "cancelTemplate": "Отменить шаблон",
+      "createSuccess": "Шаблон создан",
+      "updateSuccess": "Шаблон обновлён",
+      "deleteSuccess": "Шаблон удалён",
+      "deleteConfirm": "Удалить этот шаблон?",
+      "short": {
+        "mon": "Пн", "tue": "Вт", "wed": "Ср", "thu": "Чт", "fri": "Пт", "sat": "Сб", "sun": "Вс"
+      }
+    },
+    "pending": "Ожидает",
+    "pendingRequest": "Ожидает подтверждения администратора",
+    "pendingRequestBlocked": "Нельзя добавить записи, пока запрос на изменение ожидает рассмотрения. Дождитесь одобрения администратора.",
+    "weekendWarning": "Для работы в выходные требуется одобрение администратора. Пожалуйста, отправьте запрос на изменение."
   },
   "statistics": {
     "title": "Статистика",
@@ -156,7 +227,18 @@
     "workingDays": "Рабочих дней",
     "failedToLoadEmployees": "Не удалось загрузить сотрудников",
     "failedToLoadSummary": "Не удалось загрузить сводку",
-    "failedToLoadStats": "Не удалось загрузить статистику"
+    "failedToLoadStats": "Не удалось загрузить статистику",
+    "normHours": "Норма рабочих часов",
+    "normWeek": "В неделю",
+    "normMonth": "В месяц",
+    "normYear": "В год",
+    "workingDaysCount": "рабочих дней",
+    "maxHours": "Макс. часов",
+    "myStatistics": "Моя статистика",
+    "employeeProgress": "Прогресс сотрудников",
+    "overtimeLabel": "Переработка",
+    "hoursProgress": "Прогресс часов",
+    "remaining": "Осталось"
   },
   "office": {
     "title": "Кто в офисе?",
@@ -179,6 +261,7 @@
       "sick": "Болен",
       "vacation": "Отп.",
       "excused": "Отс.",
+      "dayoff": "Вых.",
       "noPlan": "-"
     }
   },
@@ -205,6 +288,7 @@
     "mySchedule": "Мои отпуска и больничные",
     "noVacations": "Нет запланированных отпусков",
     "noSickDays": "Нет больничных",
+    "noDayOffs": "Нет выходных",
     "editVacation": "Редактировать отпуск",
     "updateSuccess": "Отпуск успешно обновлён",
     "startDateLocked": "Дату начала нельзя изменить, так как отпуск уже начался"
@@ -229,8 +313,11 @@
       "role": "Роль",
       "roles": {
         "employee": "Сотрудник",
-        "admin": "Администратор"
+        "admin": "Администратор",
+        "itOnly": "Только ИТ"
       },
+      "isEmployee": "Виден в календаре",
+      "isEmployeeHint": "Если выключено, пользователь не будет виден в календаре и статистике",
       "isActive": "Активен",
       "inactive": "Неактивен",
       "activate": "Активировать",
@@ -241,6 +328,13 @@
       "addSuccess": "Сотрудник успешно добавлен",
       "updateSuccess": "Сотрудник успешно обновлён",
       "deleteSuccess": "Сотрудник успешно удалён",
+      "current": "Актуальные",
+      "archive": "Архив",
+      "moveToArchive": "Переместить в архив",
+      "archiveSuccess": "Сотрудник перемещён в архив",
+      "restoreFromArchive": "Восстановить из архива",
+      "restoreConfirm": "Вы уверены, что хотите восстановить этого сотрудника из архива?",
+      "restoreSuccess": "Сотрудник восстановлен из архива",
       "workEmail": "Рабочий Email",
       "employmentType": "Тип занятости",
       "fullTime": "Полная ставка",
@@ -252,10 +346,14 @@
       "nameDay": "Именины",
       "contractNumber": "Номер договора",
       "employmentStartDate": "Дата начала работы",
+      "employmentEndDate": "Дата прекращения трудовых отношений",
+      "employmentEndReason": "Основание прекращения трудовых отношений",
       "emergencyContact": "Контактное лицо",
       "emergencyContactName": "Имя контактного лица",
       "emergencyContactPhone": "Телефон контактного лица",
       "declaredAddress": "Декларированный адрес",
+      "actualAddress": "Фактический адрес",
+      "personalCode": "Персональный код",
       "department": "Отдел"
     },
     "reports": {
@@ -263,7 +361,8 @@
       "generate": "Сформировать отчёт",
       "dateRange": "Диапазон дат",
       "exportExcel": "Экспорт в Excel",
-      "exportPdf": "Экспорт в PDF"
+      "exportPdf": "Экспорт в PDF",
+      "exportCsv": "Экспорт в CSV"
     },
     "holidays": {
       "title": "Праздники",
@@ -278,7 +377,10 @@
       "entries": "Записи",
       "working": "Работает",
       "absent": "Нет записей",
-      "total": "Всего сотрудников"
+      "total": "Всего сотрудников",
+      "setStatus": "Установить статус",
+      "clearStatus": "Убрать статус",
+      "statusCleared": "Статус убран"
     },
     "calendar": {
       "title": "Командный календарь",
@@ -308,7 +410,10 @@
       "selectIcon": "Выберите иконку",
       "saveSuccess": "Настройки сохранены",
       "uploadSuccess": "Логотип загружен",
-      "deleteSuccess": "Логотип удалён"
+      "deleteSuccess": "Логотип удалён",
+      "notifications": "Уведомления",
+      "emailNotifications": "Email уведомления",
+      "emailNotificationsHint": "Отправлять email уведомления админам о новых запросах и напоминаниях"
     }
   },
   "profile": {
@@ -322,7 +427,12 @@
     "uploadAvatar": "Загрузить аватар",
     "bankAccount": "Банковский счёт",
     "updateSuccess": "Профиль успешно обновлён",
-    "passwordChangeSuccess": "Пароль успешно изменён"
+    "passwordChangeSuccess": "Пароль успешно изменён",
+    "emailNotifications": "Email уведомления",
+    "notifyMissingEntries": "Недостающие записи",
+    "notifyWeeklyReminder": "Еженедельное напоминание",
+    "notifyBirthdays": "Дни рождения",
+    "notifyNameDays": "Именины"
   },
   "settings": {
     "title": "Настройки",
@@ -334,14 +444,44 @@
     "emailNotifications": "Email уведомления"
   },
   "errors": {
+    "required": "Это поле обязательно",
     "somethingWentWrong": "Что-то пошло не так",
     "networkError": "Ошибка сети. Проверьте подключение.",
     "unauthorized": "Не авторизован. Войдите снова.",
     "forbidden": "У вас нет прав для выполнения этого действия.",
     "notFound": "Ресурс не найден.",
     "serverError": "Ошибка сервера. Попробуйте позже.",
-    "editTimeExpired": "Время редактирования истекло (30 минут). Отправьте запрос на изменение.",
-    "editTimeExpiredTitle": "Невозможно редактировать"
+    "editTimeExpired": "Нельзя редактировать прошлые записи. Отправьте запрос на изменение.",
+    "editTimeExpiredTitle": "Невозможно редактировать",
+    "maxWorkTime8Hours": "Максимальное рабочее время 8 часов",
+    "maxBreakTime60Minutes": "Максимальное время перерыва — 60 минут за день",
+    "endTimeAfterStart": "Время окончания должно быть после времени начала",
+    "timeEntryOverlaps": "Запись времени пересекается с существующей",
+    "vacationOverlaps": "Отпуск пересекается с существующим отпуском",
+    "dayHasStatus": "На этот день уже есть отпуск, больничный или выходной",
+    "dayHasEntries": "На этот день уже есть записи рабочего времени",
+    "dayHasVacation": "На этот день уже есть отпуск",
+    "vacationHasStatus": "В период отпуска уже есть больничный или выходной",
+    "cannotCreateBeyondWeek": "Нельзя создавать записи за пределами текущей недели",
+    "cannotCreateBeyondNextMonth": "Нельзя создавать записи дальше следующего месяца",
+    "timeEntryNotFound": "Запись времени не найдена",
+    "employeeNotFound": "Сотрудник не найден",
+    "invalidTimeFormat": "Неверный формат времени",
+    "invalidDateFormat": "Неверный формат даты",
+    "failedToLoadCalendarData": "Не удалось загрузить данные календаря",
+    "failedToLoadDayDetails": "Не удалось загрузить данные дня",
+    "failedToCreateEntry": "Не удалось создать запись",
+    "failedToUpdateEntry": "Не удалось обновить запись",
+    "failedToDeleteEntry": "Не удалось удалить запись",
+    "failedToLoadData": "Не удалось загрузить данные",
+    "maxWeeklyHours": "Максимальное рабочее время в неделю 40 часов",
+    "maxMonthlyHours": "Максимальное рабочее время в месяц {{hours}} часов",
+    "firstEntryBreakRequired": "Первая запись дня должна иметь 60 минут обеда",
+    "onlyFirstEntryCanHaveBreak": "Только первая запись дня может иметь обед",
+    "cannotDeletePastDayOff": "Нельзя удалить выходной за прошедшие даты",
+    "cannotCreateEntrySickDay": "Нельзя создать запись времени для дня, отмеченного как больничный",
+    "cannotCreateEntryVacation": "Нельзя создать запись времени для дня, отмеченного как отпуск",
+    "cannotCreateEntryDayOff": "Нельзя создать запись времени для дня, отмеченного как выходной"
   },
   "days": {
     "monday": "Понедельник",
@@ -394,6 +534,12 @@
     },
     "adminComment": "Комментарий администратора",
     "adminCommentPlaceholder": "Добавьте комментарий (необязательно)...",
+    "monthlyHours": "Отработанные часы за месяц",
+    "availableHours": "доступно",
+    "exceedsMonthlyLimit": "При одобрении этого запроса будет превышена месячная норма: {{projected}}ч / {{norm}}ч (+{{overtime}}ч переработки)",
+    "overtypeDaily": "Дневной лимит превышен (>8ч)",
+    "overtypeWeekly": "Недельный лимит превышен (>40ч)",
+    "overtypeMonthly": "Месячный лимит превышен",
     "approve": "Одобрить",
     "reject": "Отклонить",
     "employee": "Сотрудник",
@@ -405,7 +551,32 @@
     "deleteSuccess": "Запрос удалён",
     "deleteConfirm": "Вы уверены, что хотите удалить этот запрос?",
     "noRequests": "Нет запросов на изменение",
-    "pendingRequests": "запросов на рассмотрении"
+    "pendingRequests": "запросов на рассмотрении",
+    "submittedAt": "Отправлен",
+    "pastDayTitle": "Изменение прошедшего дня",
+    "pastDayMessage": "Этот день уже прошёл. Для редактирования необходимо отправить запрос администратору.",
+    "pastDayDeleteMessage": "Этот день уже прошёл. Для удаления необходимо отправить запрос администратору.",
+    "submit": "Отправить запрос",
+    "weeklyLimitExceeded": "Превышен недельный лимит часов",
+    "weeklyLimitMessage": "Невозможно добавить записи на {{dates}} - будет превышен лимит 40 часов в неделю. Хотите отправить запрос на изменение?",
+    "submitRequest": "Отправить запрос",
+    "weeklyLimitReason": "Запрос на превышение недельного лимита 40 часов",
+    "requestsSubmitted": "Успешно отправлено {{count}} запрос(ов)",
+    "editBeforeApprove": "Корректировать",
+    "overlapsWithPending": "Запись пересекается с ожидающим запросом",
+    "deleteSelected": "Удалить ({{count}})",
+    "bulkDeleteConfirm": "Вы уверены, что хотите удалить {{count}} запрос(ов)?",
+    "bulkDeleteSuccess": "Удалено {{count}} запрос(ов)"
+  },
+  "birthday": {
+    "upcomingBirthdays": "Ближайшие дни рождения",
+    "today": "Сегодня!",
+    "inDays": "Через {{days}} дн."
+  },
+  "nameDay": {
+    "upcomingNameDays": "Ближайшие именины",
+    "today": "Сегодня!",
+    "inDays": "Через {{days}} дн."
   },
   "notification": {
     "changeRequest": {
@@ -415,6 +586,18 @@
     "missingEntry": {
       "title": "Незаполненные рабочие часы",
       "message": "Пожалуйста, заполните рабочие часы за даты: {{dates}}"
+    },
+    "overtime": {
+      "weeklyTitle": "Предупреждение о переработке за неделю",
+      "monthlyTitle": "Предупреждение о переработке за месяц",
+      "weeklyMessage": "{{employee_name}} превысит лимит 40ч в неделю. Сейчас: {{current_hours}}ч, Прогноз: {{projected_hours}}ч",
+      "monthlyMessage": "{{employee_name}} превысит лимит {{limit_hours}}ч в месяц. Сейчас: {{current_hours}}ч, Прогноз: {{projected_hours}}ч"
+    },
+    "birthday": {
+      "todayTitle": "День рождения сегодня!",
+      "todayMessage": "У {{name}} сегодня день рождения!",
+      "upcomingTitle": "Предстоящий день рождения",
+      "upcomingMessage": "У {{name}} день рождения через 2 дня ({{date}})"
     }
   }
 }

@@ -30,10 +30,14 @@ class NotificationSettingsResponse(BaseModel):
     email_name_day: bool
     email_change_request: bool
     email_weekly_reminder: bool
+    email_missing_entry: bool
+    email_overtime_warning: bool
     app_birthday: bool
     app_name_day: bool
     app_change_request: bool
     app_weekly_reminder: bool
+    app_missing_entry: bool
+    app_overtime_warning: bool
 
     class Config:
         from_attributes = True
@@ -44,10 +48,14 @@ class NotificationSettingsUpdate(BaseModel):
     email_name_day: Optional[bool] = None
     email_change_request: Optional[bool] = None
     email_weekly_reminder: Optional[bool] = None
+    email_missing_entry: Optional[bool] = None
+    email_overtime_warning: Optional[bool] = None
     app_birthday: Optional[bool] = None
     app_name_day: Optional[bool] = None
     app_change_request: Optional[bool] = None
     app_weekly_reminder: Optional[bool] = None
+    app_missing_entry: Optional[bool] = None
+    app_overtime_warning: Optional[bool] = None
 
 
 class UnreadCountResponse(BaseModel):

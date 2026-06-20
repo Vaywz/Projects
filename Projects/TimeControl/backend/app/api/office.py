@@ -31,6 +31,7 @@ class EmployeeWithStatus(BaseModel):
     status: str | None  # 'office', 'remote', 'sick', 'vacation', 'excused', 'no_plan', or 'office/remote'
     status_emoji: str | None  # emoji for the status
     statuses: List[str] | None = None  # list of statuses if multiple (e.g., ['office', 'remote'])
+    day_status_id: int | None = None  # ID of the DayStatus record if exists
 
 
 class AllEmployeesStatusResponse(BaseModel):
@@ -66,8 +67,8 @@ async def get_office_presence(
     # Get user IDs with office plans
     office_user_ids = await workplace_plan_service.get_office_user_ids_for_date(target_date)
 
-    # Get all active employees
-    all_employees = await user_service.get_active_employees()
+    # Get employees visible on this date
+    all_employees = await user_service.get_active_employees(target_date=target_date)
     employees_map = {e.id: e for e in all_employees}
 
     # Filter out users on sick leave, vacation, or excused
@@ -77,9 +78,10 @@ async def get_office_presence(
             continue
 
         user = employees_map[user_id]
+
         status = await day_status_service.get_user_status_for_date(user_id, target_date)
 
-        if status and status.status in [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED]:
+        if status and status.status in [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED, StatusType.DAYOFF]:
             continue
 
         if user.profile:
@@ -115,7 +117,7 @@ async def get_weekly_office_presence(
     day_status_service = DayStatusService(db)
     user_service = UserService(db)
 
-    # Get all active employees
+    # Get employees visible during the requested week. Per-day filtering happens below.
     all_employees = await user_service.get_active_employees()
     employees_map = {e.id: e for e in all_employees}
 
@@ -131,9 +133,16 @@ async def get_weekly_office_presence(
                 continue
 
             user = employees_map[user_id]
+
+            # Skip employees whose employment hasn't started yet
+            if user.profile and user.profile.employment_start_date and current < user.profile.employment_start_date:
+                continue
+            if user.profile and user.profile.employment_end_date and current >= user.profile.employment_end_date:
+                continue
+
             status = await day_status_service.get_user_status_for_date(user_id, current)
 
-            if status and status.status in [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED]:
+            if status and status.status in [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED, StatusType.DAYOFF]:
                 continue
 
             if user.profile:
@@ -174,8 +183,8 @@ async def get_all_employees_status(
     user_service = UserService(db)
     time_entry_service = TimeEntryService(db)
 
-    # Get all active employees
-    all_employees = await user_service.get_active_employees()
+    # Get employees visible on this date
+    all_employees = await user_service.get_active_employees(target_date=target_date)
 
     # Get workplace plans for this date
     office_user_ids = await workplace_plan_service.get_office_user_ids_for_date(target_date)
@@ -201,16 +210,22 @@ async def get_all_employees_status(
         if day_status:
             if day_status.status == StatusType.SICK:
                 status = 'sick'
-                status_emoji = '🤒'
                 statuses = ['sick']
             elif day_status.status == StatusType.VACATION:
                 status = 'vacation'
-                status_emoji = '🏖️'
                 statuses = ['vacation']
             elif day_status.status == StatusType.EXCUSED:
                 status = 'excused'
-                status_emoji = '✅'
                 statuses = ['excused']
+            elif day_status.status == StatusType.UNEXCUSED:
+                status = 'unexcused'
+                statuses = ['unexcused']
+            elif day_status.status == StatusType.HOLIDAY:
+                status = 'holiday'
+                statuses = ['holiday']
+            elif day_status.status == StatusType.DAYOFF:
+                status = 'dayoff'
+                statuses = ['dayoff']
         else:
             # Combine workplace plans and actual time entries
             has_office_plan = user.id in office_user_ids
@@ -226,15 +241,12 @@ async def get_all_employees_status(
 
             if has_office and has_remote:
                 status = 'office/remote'
-                status_emoji = '🏢/🏠'
                 statuses = ['office', 'remote']
             elif has_office:
                 status = 'office'
-                status_emoji = '🏢'
                 statuses = ['office']
             elif has_remote:
                 status = 'remote'
-                status_emoji = '🏠'
                 statuses = ['remote']
 
         employees_with_status.append(EmployeeWithStatus(
@@ -244,8 +256,9 @@ async def get_all_employees_status(
             avatar_url=user.profile.avatar_url,
             position=user.profile.position,
             status=status,
-            status_emoji=status_emoji,
+            status_emoji=None,
             statuses=statuses if statuses else None,
+            day_status_id=day_status.id if day_status else None,
         ))
 
     return AllEmployeesStatusResponse(

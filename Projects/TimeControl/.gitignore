@@ -53,6 +53,12 @@ yarn-error.log*
 Thumbs.db
 nul
 
+# Temporary agent/editor files
+tmpclaude-*
+frontend/tmpclaude-*
+.claude/
+.agents/
+
 # Database
 *.db
 *.sqlite3
@@ -77,3 +83,6 @@ coverage.xml
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+#Docker
+docker-compose.yml

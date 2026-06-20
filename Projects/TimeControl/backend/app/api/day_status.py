@@ -2,10 +2,13 @@ from datetime import date, timedelta
 from typing import List
 from fastapi import APIRouter, HTTPException, status, Query
 from pydantic import BaseModel
+from sqlalchemy import select
 
 from app.schemas.day_status import DayStatusCreate, DayStatusUpdate, DayStatusResponse
 from app.services.day_status_service import DayStatusService
 from app.models.user import UserRole
+from app.models.day_status import StatusType
+from app.models.employee_profile import EmployeeProfile
 from .deps import DbSession, CurrentUser
 
 router = APIRouter()
@@ -57,6 +60,17 @@ async def get_my_sick_days(
     return [DayStatusResponse.model_validate(s) for s in statuses]
 
 
+@router.get("/my-day-offs", response_model=List[DayStatusResponse])
+async def get_my_day_offs(
+    current_user: CurrentUser = None,
+    db: DbSession = None
+):
+    """Get all day offs for current user."""
+    day_status_service = DayStatusService(db)
+    statuses = await day_status_service.get_user_day_offs(current_user.id)
+    return [DayStatusResponse.model_validate(s) for s in statuses]
+
+
 @router.get("/date", response_model=DayStatusResponse)
 async def get_day_status_for_date(
     date_param: date = Query(..., alias="date"),
@@ -65,17 +79,17 @@ async def get_day_status_for_date(
 ):
     """Get day status for a specific date."""
     day_status_service = DayStatusService(db)
-    status = await day_status_service.get_user_status_for_date(
+    day_status = await day_status_service.get_user_status_for_date(
         current_user.id, date_param
     )
 
-    if not status:
+    if not day_status:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="No status for this date"
         )
 
-    return DayStatusResponse.model_validate(status)
+    return DayStatusResponse.model_validate(day_status)
 
 
 @router.post("", response_model=DayStatusResponse, status_code=status.HTTP_201_CREATED)
@@ -84,10 +98,42 @@ async def create_day_status(
     current_user: CurrentUser = None,
     db: DbSession = None
 ):
-    """Create or update a day status (e.g., mark as sick)."""
+    """Create or update a day status (e.g., mark as sick).
+
+    DAYOFF status can only be set by hourly employees or admins.
+    """
+    is_admin = current_user.role == UserRole.ADMIN
+
+    # Get employee profile for validation
+    profile_result = await db.execute(
+        select(EmployeeProfile).where(EmployeeProfile.user_id == current_user.id)
+    )
+    profile = profile_result.scalar_one_or_none()
+
+    # Check employment start date
+    if profile and profile.employment_start_date and status_data.date < profile.employment_start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot create entries before employment start date ({profile.employment_start_date})"
+        )
+
+    # Check DAYOFF restriction - only hourly employees or admins can use it
+    if status_data.status == StatusType.DAYOFF and not is_admin:
+        if not profile or profile.payment_type != 'hourly':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="DAYOFF status can only be set by hourly employees"
+            )
+
     day_status_service = DayStatusService(db)
-    day_status = await day_status_service.create(current_user.id, status_data)
-    return DayStatusResponse.model_validate(day_status)
+    try:
+        day_status = await day_status_service.create(current_user.id, status_data)
+        return DayStatusResponse.model_validate(day_status)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @router.post("/sick-day", response_model=List[DayStatusResponse], status_code=status.HTTP_201_CREATED)
@@ -105,19 +151,36 @@ async def create_sick_day_range(
             detail="Start date must be before end date"
         )
 
-    created_statuses = []
-    current_date = data.start_date
-    while current_date <= data.end_date:
-        status_data = DayStatusCreate(
-            date=current_date,
-            status="sick",
-            note=data.note
+    # Check employment start date
+    profile_result = await db.execute(
+        select(EmployeeProfile).where(EmployeeProfile.user_id == current_user.id)
+    )
+    profile = profile_result.scalar_one_or_none()
+    if profile and profile.employment_start_date and data.start_date < profile.employment_start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot create entries before employment start date ({profile.employment_start_date})"
         )
-        day_status = await day_status_service.create(current_user.id, status_data)
-        created_statuses.append(DayStatusResponse.model_validate(day_status))
-        current_date += timedelta(days=1)
 
-    return created_statuses
+    try:
+        created_statuses = []
+        current_date = data.start_date
+        while current_date <= data.end_date:
+            status_data = DayStatusCreate(
+                date=current_date,
+                status="sick",
+                note=data.note
+            )
+            day_status = await day_status_service.create(current_user.id, status_data)
+            created_statuses.append(DayStatusResponse.model_validate(day_status))
+            current_date += timedelta(days=1)
+
+        return created_statuses
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @router.put("/{status_id}", response_model=DayStatusResponse)
@@ -168,7 +231,13 @@ async def update_day_status(
                 detail="New date cannot be in the past"
             )
 
-    updated = await day_status_service.update(status_id, status_data)
+    try:
+        updated = await day_status_service.update(status_id, status_data)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     return DayStatusResponse.model_validate(updated)
 
 
@@ -203,12 +272,12 @@ async def delete_day_status(
 
     today = date.today()
 
-    # Non-admin: cannot delete past or current day statuses
+    # Non-admin: cannot delete past day statuses (can delete today and future)
     if not is_admin:
-        if day_status.date <= today:
+        if day_status.date < today:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete day status for today or past dates. You can only edit future dates."
+                detail="Cannot delete day status for past dates"
             )
 
     await day_status_service.delete(status_id)

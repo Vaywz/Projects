@@ -8,7 +8,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
+  background-color: var(--ant-color-bg-layout, #f5f5f5);
 }
 
 .ant-layout {
@@ -17,7 +17,7 @@ body {
 
 .ant-layout-content {
   padding: 24px;
-  background: #f5f5f5;
+  background: var(--ant-color-bg-layout, #f5f5f5);
 }
 
 /* Calendar styles */
@@ -54,7 +54,7 @@ body {
 
 .stats-card .ant-statistic-title {
   font-size: 14px;
-  color: #666;
+  color: var(--ant-color-text-secondary, #666);
 }
 
 .stats-card .ant-statistic-content {
@@ -90,9 +90,83 @@ body {
   border: 2px solid var(--ant-color-bg-container, #fff);
 }
 
+/* Admin row highlight */
+.admin-row td {
+  background: rgba(114, 46, 209, 0.08) !important;
+}
+
+/* Fixed columns need solid bg so scrolling content doesn't show through */
+.admin-row td.ant-table-cell-fix-right,
+.admin-row td.ant-table-cell-fix-left {
+  background: color-mix(in srgb, var(--ant-color-bg-container, #fff), rgb(114, 46, 209) 8%) !important;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .ant-layout-content {
     padding: 12px;
+  }
+
+  /* Modals: fit mobile viewport */
+  .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+
+  .ant-modal .ant-modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  /* Tables: horizontal scroll */
+  .ant-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Touch-friendly buttons */
+  .ant-btn {
+    min-height: 36px;
+  }
+
+  /* Calendar cells compact */
+  .ant-picker-calendar .ant-picker-cell-inner {
+    min-height: 40px !important;
+  }
+
+  .ant-picker-calendar .ant-picker-cell .ant-picker-calendar-date-content {
+    height: auto !important;
+    overflow: hidden;
+  }
+
+  /* Dropdown fit */
+  .ant-dropdown {
+    max-width: calc(100vw - 16px);
+  }
+}
+
+@media (max-width: 576px) {
+  .ant-picker-calendar .ant-picker-cell-inner {
+    min-height: 32px !important;
+    padding: 2px !important;
+  }
+
+  .ant-statistic-content {
+    font-size: 18px !important;
+  }
+}
+
+/* Make RangePicker date selection more visible in light mode */
+:root {
+  .ant-picker-dropdown .ant-picker-cell-in-range::before {
+    background: #bae0ff !important;
+  }
+  .ant-picker-dropdown .ant-picker-cell-range-start .ant-picker-cell-inner,
+  .ant-picker-dropdown .ant-picker-cell-range-end .ant-picker-cell-inner {
+    background: #1677ff !important;
+    color: #fff !important;
+  }
+  .ant-picker-dropdown .ant-picker-cell-in-range .ant-picker-cell-inner {
+    color: #000 !important;
   }
 }

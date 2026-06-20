@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Card,
@@ -11,9 +11,11 @@ import {
   Typography,
   Space,
   Divider,
+  Switch,
+  List,
   message,
 } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, BankOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined, PhoneOutlined, BankOutlined, BellOutlined } from '@ant-design/icons';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
@@ -26,6 +28,29 @@ const ProfilePage: React.FC = () => {
   const [passwordForm] = Form.useForm();
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [notifSettings, setNotifSettings] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const fetchNotifSettings = async () => {
+      try {
+        const data = await api.getNotificationSettings();
+        setNotifSettings(data);
+      } catch (error) {
+        console.error('Failed to fetch notification settings');
+      }
+    };
+    fetchNotifSettings();
+  }, []);
+
+  const handleNotifToggle = async (field: string, value: boolean) => {
+    setNotifSettings(prev => ({ ...prev, [field]: value }));
+    try {
+      await api.updateNotificationSettings({ [field]: value });
+    } catch (error) {
+      setNotifSettings(prev => ({ ...prev, [field]: !value }));
+      message.error(t('errors.somethingWentWrong'));
+    }
+  };
 
   const handleProfileUpdate = async (values: any) => {
     setProfileLoading(true);
@@ -116,7 +141,7 @@ const ProfilePage: React.FC = () => {
               }}
             >
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     name="first_name"
                     label={t('admin.employees.firstName')}
@@ -125,7 +150,7 @@ const ProfilePage: React.FC = () => {
                     <Input />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     name="last_name"
                     label={t('admin.employees.lastName')}
@@ -136,12 +161,12 @@ const ProfilePage: React.FC = () => {
                 </Col>
               </Row>
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item name="phone" label={t('admin.employees.phone')}>
                     <Input />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item name="position" label={t('admin.employees.position')}>
                     <Input disabled />
                   </Form.Item>
@@ -158,7 +183,7 @@ const ProfilePage: React.FC = () => {
             </Form>
           </Card>
 
-          <Card title={t('profile.changePassword')}>
+          <Card title={t('profile.changePassword')} style={{ marginBottom: 24 }}>
             <Form
               form={passwordForm}
               layout="vertical"
@@ -172,7 +197,7 @@ const ProfilePage: React.FC = () => {
                 <Input.Password />
               </Form.Item>
               <Row gutter={16}>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     name="new_password"
                     label={t('profile.newPassword')}
@@ -184,7 +209,7 @@ const ProfilePage: React.FC = () => {
                     <Input.Password />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
+                <Col xs={24} md={12}>
                   <Form.Item
                     name="confirm_password"
                     label={t('profile.confirmPassword')}
@@ -200,6 +225,58 @@ const ProfilePage: React.FC = () => {
                 </Button>
               </Form.Item>
             </Form>
+          </Card>
+
+          <Card
+            title={
+              <Space>
+                <BellOutlined />
+                {t('profile.emailNotifications')}
+              </Space>
+            }
+          >
+            <List>
+              <List.Item
+                actions={[
+                  <Switch
+                    checked={notifSettings.email_missing_entry ?? true}
+                    onChange={(v) => handleNotifToggle('email_missing_entry', v)}
+                  />
+                ]}
+              >
+                <List.Item.Meta title={t('profile.notifyMissingEntries')} />
+              </List.Item>
+              <List.Item
+                actions={[
+                  <Switch
+                    checked={notifSettings.email_weekly_reminder ?? true}
+                    onChange={(v) => handleNotifToggle('email_weekly_reminder', v)}
+                  />
+                ]}
+              >
+                <List.Item.Meta title={t('profile.notifyWeeklyReminder')} />
+              </List.Item>
+              <List.Item
+                actions={[
+                  <Switch
+                    checked={notifSettings.email_birthday ?? true}
+                    onChange={(v) => handleNotifToggle('email_birthday', v)}
+                  />
+                ]}
+              >
+                <List.Item.Meta title={t('profile.notifyBirthdays')} />
+              </List.Item>
+              <List.Item
+                actions={[
+                  <Switch
+                    checked={notifSettings.email_name_day ?? true}
+                    onChange={(v) => handleNotifToggle('email_name_day', v)}
+                  />
+                ]}
+              >
+                <List.Item.Meta title={t('profile.notifyNameDays')} />
+              </List.Item>
+            </List>
           </Card>
         </Col>
       </Row>

@@ -4,6 +4,8 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.day_status import DayStatus, StatusType
+from app.models.time_entry import TimeEntry
+from app.models.vacation import Vacation
 from app.schemas.day_status import DayStatusCreate, DayStatusUpdate
 
 
@@ -59,9 +61,44 @@ class DayStatusService:
         )
         return list(result.scalars().all())
 
-    async def create(self, user_id: int, status_data: DayStatusCreate) -> DayStatus:
+    async def get_user_day_offs(self, user_id: int) -> List[DayStatus]:
+        """Get all day offs for a user."""
+        result = await self.db.execute(
+            select(DayStatus)
+            .where(and_(
+                DayStatus.user_id == user_id,
+                DayStatus.status == StatusType.DAYOFF
+            ))
+            .order_by(DayStatus.date.desc())
+        )
+        return list(result.scalars().all())
+
+    async def create(self, user_id: int, status_data: DayStatusCreate, admin_bypass: bool = False) -> DayStatus:
         """Create or update a day status."""
-        skip_statuses = [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED]
+        skip_statuses = [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED, StatusType.DAYOFF]
+
+        # Check if date has time entries - can't create status on a day with entries
+        if not admin_bypass and status_data.status in skip_statuses:
+            entry_result = await self.db.execute(
+                select(TimeEntry).where(and_(
+                    TimeEntry.user_id == user_id,
+                    TimeEntry.date == status_data.date,
+                ))
+            )
+            if entry_result.scalar_one_or_none():
+                raise ValueError("Cannot set day status on a day with time entries")
+
+        # Check if date falls within a vacation range
+        if not admin_bypass and status_data.status in [StatusType.SICK, StatusType.DAYOFF, StatusType.EXCUSED]:
+            vacation_result = await self.db.execute(
+                select(Vacation).where(and_(
+                    Vacation.user_id == user_id,
+                    Vacation.date_from <= status_data.date,
+                    Vacation.date_to >= status_data.date,
+                ))
+            )
+            if vacation_result.scalar_one_or_none():
+                raise ValueError("Cannot set day status on a day with vacation")
 
         # Check if status already exists
         existing = await self.get_user_status_for_date(user_id, status_data.date)
@@ -88,13 +125,41 @@ class DayStatusService:
 
     async def update(self, status_id: int, status_data: DayStatusUpdate) -> Optional[DayStatus]:
         """Update a day status."""
-        skip_statuses = [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED]
+        skip_statuses = [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED, StatusType.DAYOFF]
 
         status = await self.get_by_id(status_id)
         if not status:
             return None
 
         update_data = status_data.model_dump(exclude_unset=True)
+
+        # Check conflicts when changing to a skip status or changing date
+        new_status_type = update_data.get('status', status.status)
+        new_date = update_data.get('date', status.date)
+
+        if new_status_type in skip_statuses:
+            # Check if date has time entries
+            entry_result = await self.db.execute(
+                select(TimeEntry).where(and_(
+                    TimeEntry.user_id == status.user_id,
+                    TimeEntry.date == new_date,
+                ))
+            )
+            if entry_result.scalar_one_or_none():
+                raise ValueError("Cannot set day status on a day with time entries")
+
+            # Check if date falls within a vacation range (unless setting vacation status)
+            if new_status_type != StatusType.VACATION:
+                vacation_result = await self.db.execute(
+                    select(Vacation).where(and_(
+                        Vacation.user_id == status.user_id,
+                        Vacation.date_from <= new_date,
+                        Vacation.date_to >= new_date,
+                    ))
+                )
+                if vacation_result.scalar_one_or_none():
+                    raise ValueError("Cannot set day status on a day with vacation")
+
         for field, value in update_data.items():
             setattr(status, field, value)
 
@@ -116,11 +181,11 @@ class DayStatusService:
         return True
 
     async def is_skip_day(self, user_id: int, target_date: date) -> bool:
-        """Check if a day should be skipped (sick, vacation, or excused)."""
+        """Check if a day should be skipped (sick, vacation, excused, or dayoff)."""
         status = await self.get_user_status_for_date(user_id, target_date)
         if not status:
             return False
-        return status.status in [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED]
+        return status.status in [StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED, StatusType.DAYOFF]
 
     async def get_sick_vacation_dates(
         self,
@@ -128,14 +193,14 @@ class DayStatusService:
         start_date: date,
         end_date: date
     ) -> List[date]:
-        """Get list of dates with sick, vacation, or excused status."""
+        """Get list of dates with sick, vacation, excused, or dayoff status."""
         result = await self.db.execute(
             select(DayStatus.date)
             .where(and_(
                 DayStatus.user_id == user_id,
                 DayStatus.date >= start_date,
                 DayStatus.date <= end_date,
-                DayStatus.status.in_([StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED])
+                DayStatus.status.in_([StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED, StatusType.DAYOFF])
             ))
         )
         return [row[0] for row in result.fetchall()]

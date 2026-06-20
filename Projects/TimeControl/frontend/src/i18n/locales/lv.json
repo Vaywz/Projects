@@ -14,8 +14,12 @@
     "back": "Atpakaļ",
     "next": "Tālāk",
     "submit": "Iesniegt",
+    "daysSelected": "Izvēlētas {{count}} diena(s)",
+    "confirmSubmitTitle": "Apstiprināt iesniegšanu",
+    "confirmSubmitMessage": "Vai tiešām vēlaties iesniegt par {{count}} dienu(-ām)?",
     "reset": "Atiestatīt",
     "close": "Aizvērt",
+    "view": "Skatīt",
     "actions": "Darbības",
     "status": "Statuss",
     "date": "Datums",
@@ -27,7 +31,11 @@
     "export": "Eksportēt",
     "all": "Visi",
     "selectEmployee": "Izvēlieties darbinieku",
-    "more": "vēl"
+    "more": "vēl",
+    "day": "Diena",
+    "month": "Mēnesis",
+    "hoursShort": "st",
+    "minutesShort": "m"
   },
   "auth": {
     "login": "Pieslēgties",
@@ -92,9 +100,23 @@
       "endAfterStart": "Beigu laikam jābūt pēc sākuma laika",
       "required": "Šis lauks ir obligāts",
       "maxHours": "Maksimālais darba laiks ir 8 stundas",
-      "maxHoursDaily": "Maksimālais kopējais darba laiks dienā ir 8 stundas"
+      "maxHoursDaily": "Maksimālais kopējais darba laiks dienā ir 8 stundas",
+      "maxHoursWeekly": "Maksimālais kopējais darba laiks nedēļā ir 40 stundas"
     },
-    "breakNotAllowedSecondEntry": "Pārtraukums ir atļauts tikai pirmajam dienas ierakstam"
+    "maxBreak60Minutes": "Maks. 60 minūtes pārtraukuma dienā",
+    "overtime": {
+      "title": "Darba laiks pārsniedz 8 stundas",
+      "message": "Jūsu kopējais darba laiks dienā būs {{hours}}h {{minutes}}min (pārsniegums: {{overtime}}min). Ko vēlaties darīt?",
+      "adjustTime": "Pielāgot laiku",
+      "submitRequest": "Pieprasīt apstiprinājumu",
+      "weeklyTitle": "Nedēļas darba laiks pārsniedz 40 stundas",
+      "weeklyMessage": "Jūsu kopējais darba laiks nedēļā būs {{hours}}h {{minutes}}min (pārsniegums: {{overtime}}min). Ko vēlaties darīt?",
+      "monthlyTitle": "Mēneša darba laiks pārsniedz normu",
+      "monthlyMessage": "Jūsu kopējais darba laiks mēnesī būs {{hours}}h {{minutes}}min (limits: {{limit}}h). Ko vēlaties darīt?"
+    },
+    "breakNotAllowedSecondEntry": "Pārtraukums ir atļauts tikai pirmajam dienas ierakstam",
+    "breakChangeRequestRequired": "Lai mainītu pārtraukumu ierakstam virs 8 stundām, nepieciešams pieprasījums",
+    "breakChangeRequestHint": "Izmantojiet kalendāru, lai pieprasītu pārtraukuma maiņu"
   },
   "calendar": {
     "title": "Kalendārs",
@@ -107,6 +129,9 @@
     "vacation": "Atvaļinājums",
     "sickDay": "Slimības diena",
     "excusedAbsence": "Attaisnota prombūtne",
+    "unexcusedAbsence": "Neattaisnota prombūtne",
+    "holidayStatus": "Svētki",
+    "dayoff": "Brīvdiena",
     "hoursWorked": "Nostrādātas stundas",
     "noEntries": "Nav ierakstu",
     "noTimeLogs": "Nav darba laiku",
@@ -117,9 +142,55 @@
     "weeklyReminder": {
       "title": "Aizpildiet darba laiku",
       "message": "Jums ir {{count}} neaizpildītas darba dienas šajā nedēļā",
-      "skip": "Izlaist",
-      "saveAndNext": "Saglabāt un turpināt"
-    }
+      "selectDays": "Izvēlieties dienas",
+      "selectAll": "Izvēlēties visus",
+      "deselectAll": "Noņemt atlasi",
+      "schedule": "Darba grafiks",
+      "applySchedule": "Piemērot grafiku",
+      "entriesCreated": "Izveidoti {{count}} ieraksti",
+      "selectAtLeastOne": "Lūdzu, izvēlieties vismaz vienu dienu"
+    },
+    "bulkEntry": {
+      "title": "Vairāku dienu aizpildīšana",
+      "selectPeriod": "Izvēlieties periodu",
+      "availableDays": "{{count}} pieejamas darba dienas izvēlētajā periodā",
+      "noDaysAvailable": "Nav pieejamu darba dienu izvēlētajā periodā",
+      "successDirect": "Veiksmīgi izveidoti {{count}} ieraksti",
+      "successRequests": "Iesniegti {{count}} izmaiņu pieprasījumi",
+      "blockedWeekend": "Brīvdiena",
+      "blockedHoliday": "Svētku diena",
+      "blockedHasEntry": "Jau ir ieraksts",
+      "blockedHasStatus": "Atvaļinājums/slimība/brīvs",
+      "blockedPending": "Gaidošs pieprasījums"
+    },
+    "scheduleTemplate": {
+      "manage": "Grafiku šabloni",
+      "add": "Pievienot šablonu",
+      "addTitle": "Jauns grafika šablons",
+      "editTitle": "Rediģēt šablonu",
+      "name": "Nosaukums",
+      "namePlaceholder": "piem. Standarta nedēļa",
+      "useTemplate": "Izmantot šablonu",
+      "selectPlaceholder": "Izvēlieties šablonu...",
+      "saveDayTemplate": "Saglabāt dienu kā šablonu",
+      "saveDayTemplateTitle": "Saglabāt dienas šablonu",
+      "dayTemplateDefaultName": "Dienas šablons",
+      "noWorkTimeInTemplate": "Šajā šablonā nav darba laika, ko piemērot",
+      "noTemplates": "Šablonu vēl nav",
+      "emptyHint": "Jums vēl nav grafika šablonu. Izveidojiet vienu, lai ātri aizpildītu vairākas dienas.",
+      "cancelTemplate": "Atcelt šablonu",
+      "createSuccess": "Šablons izveidots",
+      "updateSuccess": "Šablons atjaunināts",
+      "deleteSuccess": "Šablons dzēsts",
+      "deleteConfirm": "Dzēst šo šablonu?",
+      "short": {
+        "mon": "Pr", "tue": "Ot", "wed": "Tr", "thu": "Ce", "fri": "Pk", "sat": "Se", "sun": "Sv"
+      }
+    },
+    "pending": "Gaida",
+    "pendingRequest": "Gaida administratora apstiprinājumu",
+    "pendingRequestBlocked": "Nevar pievienot ierakstus, kamēr ir iesniegts izmaiņu pieprasījums. Gaidiet administratora apstiprinājumu.",
+    "weekendWarning": "Darbam brīvdienās nepieciešams administratora apstiprinājums. Lūdzu, iesniedziet izmaiņu pieprasījumu."
   },
   "statistics": {
     "title": "Statistika",
@@ -156,7 +227,18 @@
     "workingDays": "Darba dienas",
     "failedToLoadEmployees": "Neizdevās ielādēt darbiniekus",
     "failedToLoadSummary": "Neizdevās ielādēt kopsavilkumu",
-    "failedToLoadStats": "Neizdevās ielādēt statistiku"
+    "failedToLoadStats": "Neizdevās ielādēt statistiku",
+    "normHours": "Darba stundu norma",
+    "normWeek": "Nedēļā",
+    "normMonth": "Mēnesī",
+    "normYear": "Gadā",
+    "workingDaysCount": "darba dienas",
+    "maxHours": "Maks. stundas",
+    "myStatistics": "Mana statistika",
+    "employeeProgress": "Darbinieku progress",
+    "overtimeLabel": "Virsstundas",
+    "hoursProgress": "Stundu progress",
+    "remaining": "Atlikušas"
   },
   "office": {
     "title": "Kas ir birojā?",
@@ -170,15 +252,16 @@
     "mySchedule": "Mans grafiks",
     "planWorkplace": "Plānot darba vietu",
     "workFromOffice": "Birojā",
-    "workFromHome": "No mājām",
+    "workFromHome": "Attālināti",
     "planSuccess": "Grafiks saglabāts",
     "selectDays": "Izvēlieties dienas un darba vietu",
     "short": {
       "office": "Birojā",
-      "remote": "Mājās",
+      "remote": "Attālin.",
       "sick": "Slims",
       "vacation": "Atvaļ.",
       "excused": "Attais.",
+      "dayoff": "Brīvd.",
       "noPlan": "-"
     }
   },
@@ -205,6 +288,7 @@
     "mySchedule": "Mani atvaļinājumi un slimības dienas",
     "noVacations": "Nav ieplānotu atvaļinājumu",
     "noSickDays": "Nav slimības dienu",
+    "noDayOffs": "Nav brīvdienu",
     "editVacation": "Rediģēt atvaļinājumu",
     "updateSuccess": "Atvaļinājums veiksmīgi atjaunināts",
     "startDateLocked": "Sākuma datumu nevar mainīt, jo atvaļinājums jau ir sācies"
@@ -229,8 +313,11 @@
       "role": "Loma",
       "roles": {
         "employee": "Darbinieks",
-        "admin": "Administrators"
+        "admin": "Administrators",
+        "itOnly": "Tikai IT"
       },
+      "isEmployee": "Redzams kalendārā",
+      "isEmployeeHint": "Ja izslēgts, lietotājs nebūs redzams kalendārā un statistikā",
       "isActive": "Aktīvs",
       "inactive": "Neaktīvs",
       "activate": "Aktivizēt",
@@ -241,6 +328,13 @@
       "addSuccess": "Darbinieks veiksmīgi pievienots",
       "updateSuccess": "Darbinieks veiksmīgi atjaunināts",
       "deleteSuccess": "Darbinieks veiksmīgi dzēsts",
+      "current": "Aktuālie",
+      "archive": "Arhīvs",
+      "moveToArchive": "Pārvietot uz arhīvu",
+      "archiveSuccess": "Darbinieks pārvietots uz arhīvu",
+      "restoreFromArchive": "Atjaunot no arhīva",
+      "restoreConfirm": "Vai tiešām vēlaties atjaunot šo darbinieku no arhīva?",
+      "restoreSuccess": "Darbinieks atjaunots no arhīva",
       "workEmail": "Darba e-pasts",
       "employmentType": "Nodarbinātības veids",
       "fullTime": "Pilna slodze",
@@ -252,10 +346,14 @@
       "nameDay": "Vārda diena",
       "contractNumber": "Darba līguma numurs",
       "employmentStartDate": "Darba sākuma datums",
+      "employmentEndDate": "Darba attiecību izbeigšanas datums",
+      "employmentEndReason": "Darba attiecību izbeigšanas pamatojums",
       "emergencyContact": "Kontaktpersona",
       "emergencyContactName": "Kontaktpersonas vārds",
       "emergencyContactPhone": "Kontaktpersonas tālrunis",
       "declaredAddress": "Deklarētā adrese",
+      "actualAddress": "Faktiskā adrese",
+      "personalCode": "Personas kods",
       "department": "Nodaļa"
     },
     "reports": {
@@ -263,7 +361,8 @@
       "generate": "Ģenerēt atskaiti",
       "dateRange": "Datumu diapazons",
       "exportExcel": "Eksportēt uz Excel",
-      "exportPdf": "Eksportēt uz PDF"
+      "exportPdf": "Eksportēt uz PDF",
+      "exportCsv": "Eksportēt uz CSV"
     },
     "holidays": {
       "title": "Svētki",
@@ -278,7 +377,10 @@
       "entries": "Ieraksti",
       "working": "Strādā",
       "absent": "Nav ierakstu",
-      "total": "Kopā darbinieku"
+      "total": "Kopā darbinieku",
+      "setStatus": "Iestatīt statusu",
+      "clearStatus": "Noņemt statusu",
+      "statusCleared": "Statuss noņemts"
     },
     "calendar": {
       "title": "Komandas kalendārs",
@@ -308,7 +410,10 @@
       "selectIcon": "Izvēlieties ikonu",
       "saveSuccess": "Iestatījumi saglabāti",
       "uploadSuccess": "Logotips augšupielādēts",
-      "deleteSuccess": "Logotips dzēsts"
+      "deleteSuccess": "Logotips dzēsts",
+      "notifications": "Paziņojumi",
+      "emailNotifications": "E-pasta paziņojumi",
+      "emailNotificationsHint": "Sūtīt e-pasta paziņojumus adminiem par jauniem pieprasījumiem un atgādinājumiem"
     }
   },
   "profile": {
@@ -322,7 +427,12 @@
     "uploadAvatar": "Augšupielādēt avatāru",
     "bankAccount": "Bankas konts",
     "updateSuccess": "Profils veiksmīgi atjaunināts",
-    "passwordChangeSuccess": "Parole veiksmīgi nomainīta"
+    "passwordChangeSuccess": "Parole veiksmīgi nomainīta",
+    "emailNotifications": "E-pasta paziņojumi",
+    "notifyMissingEntries": "Trūkstošie ieraksti",
+    "notifyWeeklyReminder": "Iknedēļas atgādinājums",
+    "notifyBirthdays": "Dzimšanas dienas",
+    "notifyNameDays": "Vārda dienas"
   },
   "settings": {
     "title": "Iestatījumi",
@@ -334,14 +444,44 @@
     "emailNotifications": "E-pasta paziņojumi"
   },
   "errors": {
+    "required": "Šis lauks ir obligāts",
     "somethingWentWrong": "Kaut kas nogāja greizi",
     "networkError": "Tīkla kļūda. Pārbaudiet savienojumu.",
     "unauthorized": "Nav autorizēts. Lūdzu, piesakieties vēlreiz.",
     "forbidden": "Jums nav tiesību veikt šo darbību.",
     "notFound": "Resurss nav atrasts.",
     "serverError": "Servera kļūda. Lūdzu, mēģiniet vēlāk.",
-    "editTimeExpired": "Rediģēšanas laiks ir beidzies (30 minūtes). Lūdzu, iesniedziet izmaiņu pieprasījumu.",
-    "editTimeExpiredTitle": "Nevar rediģēt"
+    "editTimeExpired": "Nevar rediģēt iepriekšējo dienu ierakstus. Lūdzu, iesniedziet izmaiņu pieprasījumu.",
+    "editTimeExpiredTitle": "Nevar rediģēt",
+    "maxWorkTime8Hours": "Maksimālais darba laiks ir 8 stundas",
+    "maxBreakTime60Minutes": "Maksimālais pārtraukuma laiks ir 60 minūtes dienā",
+    "endTimeAfterStart": "Beigu laikam jābūt pēc sākuma laika",
+    "timeEntryOverlaps": "Laika ieraksts pārklājas ar esošu ierakstu",
+    "vacationOverlaps": "Atvaļinājums pārklājas ar esošu atvaļinājumu",
+    "dayHasStatus": "Šajā dienā jau ir atvaļinājums, slimības diena vai brīvdiena",
+    "dayHasEntries": "Šajā dienā jau ir darba laika ieraksti",
+    "dayHasVacation": "Šajā dienā jau ir atvaļinājums",
+    "vacationHasStatus": "Atvaļinājuma periodā jau ir slimības diena vai brīvdiena",
+    "cannotCreateBeyondWeek": "Nevar izveidot ierakstus ārpus pašreizējās nedēļas",
+    "cannotCreateBeyondNextMonth": "Nevar izveidot ierakstus tālāk par nākamo mēnesi",
+    "timeEntryNotFound": "Laika ieraksts nav atrasts",
+    "employeeNotFound": "Darbinieks nav atrasts",
+    "invalidTimeFormat": "Nederīgs laika formāts",
+    "invalidDateFormat": "Nederīgs datuma formāts",
+    "failedToLoadCalendarData": "Neizdevās ielādēt kalendāra datus",
+    "failedToLoadDayDetails": "Neizdevās ielādēt dienas datus",
+    "failedToCreateEntry": "Neizdevās izveidot ierakstu",
+    "failedToUpdateEntry": "Neizdevās atjaunināt ierakstu",
+    "failedToDeleteEntry": "Neizdevās dzēst ierakstu",
+    "failedToLoadData": "Neizdevās ielādēt datus",
+    "maxWeeklyHours": "Maksimālais kopējais darba laiks nedēļā ir 40 stundas",
+    "maxMonthlyHours": "Maksimālais kopējais darba laiks mēnesī ir {{hours}} stundas",
+    "firstEntryBreakRequired": "Pirmajam dienas ierakstam jābūt ar 60 minūšu pārtraukumu",
+    "onlyFirstEntryCanHaveBreak": "Tikai pirmajam dienas ierakstam var būt pārtraukums",
+    "cannotDeletePastDayOff": "Nevar dzēst brīvdienu par pagātnes datumiem",
+    "cannotCreateEntrySickDay": "Nevar izveidot laika ierakstu dienai, kas atzīmēta kā slimības diena",
+    "cannotCreateEntryVacation": "Nevar izveidot laika ierakstu dienai, kas atzīmēta kā atvaļinājums",
+    "cannotCreateEntryDayOff": "Nevar izveidot laika ierakstu dienai, kas atzīmēta kā brīvdiena"
   },
   "days": {
     "monday": "Pirmdiena",
@@ -394,6 +534,12 @@
     },
     "adminComment": "Administratora komentārs",
     "adminCommentPlaceholder": "Pievienojiet komentāru (neobligāti)...",
+    "monthlyHours": "Nostrādātās stundas šajā mēnesī",
+    "availableHours": "pieejamas",
+    "exceedsMonthlyLimit": "Apstiprinot šo pieprasījumu, darbinieks pārsniegs mēneša normu: {{projected}}h / {{norm}}h (+{{overtime}}h virsstundas)",
+    "overtypeDaily": "Dienas limits pārsniegts (>8h)",
+    "overtypeWeekly": "Nedēļas limits pārsniegts (>40h)",
+    "overtypeMonthly": "Mēneša limits pārsniegts",
     "approve": "Apstiprināt",
     "reject": "Noraidīt",
     "employee": "Darbinieks",
@@ -405,7 +551,32 @@
     "deleteSuccess": "Pieprasījums dzēsts",
     "deleteConfirm": "Vai tiešām vēlaties dzēst šo pieprasījumu?",
     "noRequests": "Nav izmaiņu pieprasījumu",
-    "pendingRequests": "neizskatīti pieprasījumi"
+    "pendingRequests": "neizskatīti pieprasījumi",
+    "submittedAt": "Iesniegts",
+    "pastDayTitle": "Pagātnes dienas maiņa",
+    "pastDayMessage": "Šī diena jau ir pagājusi. Lai rediģētu, jānosūta pieprasījums administratoram.",
+    "pastDayDeleteMessage": "Šī diena jau ir pagājusi. Lai dzēstu, jānosūta pieprasījums administratoram.",
+    "submit": "Nosūtīt pieprasījumu",
+    "weeklyLimitExceeded": "Pārsniegts nedēļas stundu limits",
+    "weeklyLimitMessage": "Nevar pievienot ierakstus datumiem {{dates}} - tiktu pārsniegts 40 stundu nedēļas limits. Vai vēlaties iesniegt izmaiņu pieprasījumu?",
+    "submitRequest": "Iesniegt pieprasījumu",
+    "weeklyLimitReason": "Pieprasījums pārsniegt 40 stundu nedēļas limitu",
+    "requestsSubmitted": "Veiksmīgi iesniegti {{count}} pieprasījums(-i)",
+    "editBeforeApprove": "Koriģēt",
+    "overlapsWithPending": "Laika ieraksts pārklājas ar gaidu pieprasījumu",
+    "deleteSelected": "Dzēst ({{count}})",
+    "bulkDeleteConfirm": "Vai tiešām vēlaties dzēst {{count}} pieprasījumu(-s)?",
+    "bulkDeleteSuccess": "Dzēsti {{count}} pieprasījumi"
+  },
+  "birthday": {
+    "upcomingBirthdays": "Gaidāmās dzimšanas dienas",
+    "today": "Šodien!",
+    "inDays": "Pēc {{days}} dienām"
+  },
+  "nameDay": {
+    "upcomingNameDays": "Gaidāmās vārda dienas",
+    "today": "Šodien!",
+    "inDays": "Pēc {{days}} dienām"
   },
   "notification": {
     "changeRequest": {
@@ -415,6 +586,18 @@
     "missingEntry": {
       "title": "Neaizpildītas darba stundas",
       "message": "Lūdzu, ievadiet darba stundas par datumiem: {{dates}}"
+    },
+    "overtime": {
+      "weeklyTitle": "Nedēļas virsstundu brīdinājums",
+      "monthlyTitle": "Mēneša virsstundu brīdinājums",
+      "weeklyMessage": "{{employee_name}} pārsniegs 40h nedēļas limitu. Pašreiz: {{current_hours}}h, Prognozēts: {{projected_hours}}h",
+      "monthlyMessage": "{{employee_name}} pārsniegs {{limit_hours}}h mēneša limitu. Pašreiz: {{current_hours}}h, Prognozēts: {{projected_hours}}h"
+    },
+    "birthday": {
+      "todayTitle": "Dzimšanas diena šodien!",
+      "todayMessage": "{{name}} šodien svin dzimšanas dienu!",
+      "upcomingTitle": "Gaidāmā dzimšanas diena",
+      "upcomingMessage": "{{name}} dzimšanas diena pēc 2 dienām ({{date}})"
     }
   }
 }

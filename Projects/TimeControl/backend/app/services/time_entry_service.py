@@ -1,10 +1,12 @@
-from datetime import date, time
-from typing import List, Optional
+from datetime import date, time, timedelta
+from typing import List, Optional, Union
 from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.time_entry import TimeEntry, WorkplaceType
-from app.schemas.time_entry import TimeEntryCreate, TimeEntryUpdate, DaySummary, TimeEntryResponse
+from app.models.day_status import DayStatus, StatusType
+from app.models.vacation import Vacation
+from app.schemas.time_entry import TimeEntryCreate, TimeEntryUpdate, TimeEntryUpdateAdmin, DaySummary, TimeEntryResponse
 
 
 class TimeEntryService:
@@ -29,6 +31,11 @@ class TimeEntryService:
             .order_by(TimeEntry.start_time)
         )
         return list(result.scalars().all())
+
+    async def get_total_break_for_date(self, user_id: int, target_date: date, exclude_id: Optional[int] = None) -> int:
+        """Get total break minutes for a user on a specific date."""
+        entries = await self.get_user_entries_for_date(user_id, target_date)
+        return sum(e.break_minutes for e in entries if exclude_id is None or e.id != exclude_id)
 
     async def get_user_entries_for_range(
         self,
@@ -91,19 +98,41 @@ class TimeEntryService:
             has_remote=has_remote,
         )
 
-    async def create(self, user_id: int, entry_data: TimeEntryCreate) -> TimeEntry:
+    async def create(self, user_id: int, entry_data: TimeEntryCreate, admin_bypass: bool = False, payment_type: Optional[str] = None) -> TimeEntry:
         """Create a new time entry."""
-        # Allow entries for current week (up to end of week - Friday)
-        today = date.today()
-        # Calculate end of current week (Friday)
-        days_until_friday = 4 - today.weekday()  # 4 = Friday
-        if days_until_friday < 0:
-            days_until_friday = 0  # If today is Saturday/Sunday, use today
-        from datetime import timedelta
-        week_end = today + timedelta(days=days_until_friday)
+        # Allow entries for current month + next month - skip for admin
+        if not admin_bypass:
+            today = date.today()
+            # Calculate end of next month
+            if today.month >= 11:
+                next_month_end = date(today.year + 1, today.month - 10, 1) - timedelta(days=1)
+            else:
+                next_month_end = date(today.year, today.month + 2, 1) - timedelta(days=1)
 
-        if entry_data.date > week_end:
-            raise ValueError("Cannot create time entries beyond current week")
+            if entry_data.date > next_month_end:
+                raise ValueError("Cannot create time entries beyond next month")
+
+        # Check if date has vacation/sick/dayoff status
+        day_status_result = await self.db.execute(
+            select(DayStatus).where(and_(
+                DayStatus.user_id == user_id,
+                DayStatus.date == entry_data.date,
+                DayStatus.status.in_([StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED, StatusType.DAYOFF])
+            ))
+        )
+        if day_status_result.scalar_one_or_none():
+            raise ValueError("Cannot create time entry on a day with vacation, sick day, or day off")
+
+        # Check if date falls within a vacation range
+        vacation_result = await self.db.execute(
+            select(Vacation).where(and_(
+                Vacation.user_id == user_id,
+                Vacation.date_from <= entry_data.date,
+                Vacation.date_to >= entry_data.date,
+            ))
+        )
+        if vacation_result.scalar_one_or_none():
+            raise ValueError("Cannot create time entry on a day with vacation, sick day, or day off")
 
         # Check for overlapping entries
         overlapping = await self._check_overlap(
@@ -115,12 +144,19 @@ class TimeEntryService:
         if overlapping:
             raise ValueError("Time entry overlaps with existing entry")
 
+        # Preserve user-provided break minutes, capped by the daily break limit.
+        existing_entries = await self.get_user_entries_for_date(user_id, entry_data.date)
+        break_minutes = entry_data.break_minutes
+        existing_break = sum(e.break_minutes for e in existing_entries)
+        if existing_break + break_minutes > 60:
+            raise ValueError("Maximum total break time is 60 minutes per day")
+
         entry = TimeEntry(
             user_id=user_id,
             date=entry_data.date,
             start_time=entry_data.start_time,
             end_time=entry_data.end_time,
-            break_minutes=entry_data.break_minutes,
+            break_minutes=break_minutes,
             workplace=entry_data.workplace,
             comment=entry_data.comment,
         )
@@ -129,13 +165,36 @@ class TimeEntryService:
         await self.db.refresh(entry)
         return entry
 
-    async def update(self, entry_id: int, entry_data: TimeEntryUpdate) -> Optional[TimeEntry]:
+    async def update(self, entry_id: int, entry_data: Union[TimeEntryUpdate, TimeEntryUpdateAdmin]) -> Optional[TimeEntry]:
         """Update a time entry."""
         entry = await self.get_by_id(entry_id)
         if not entry:
             return None
 
         update_data = entry_data.model_dump(exclude_unset=True)
+
+        # If date is changing, check for vacation/sick/dayoff status on new date
+        if 'date' in update_data and update_data['date'] != entry.date:
+            new_date = update_data['date']
+            day_status_result = await self.db.execute(
+                select(DayStatus).where(and_(
+                    DayStatus.user_id == entry.user_id,
+                    DayStatus.date == new_date,
+                    DayStatus.status.in_([StatusType.SICK, StatusType.VACATION, StatusType.EXCUSED, StatusType.DAYOFF])
+                ))
+            )
+            if day_status_result.scalar_one_or_none():
+                raise ValueError("Cannot move time entry to a day with vacation, sick day, or day off")
+
+            vacation_result = await self.db.execute(
+                select(Vacation).where(and_(
+                    Vacation.user_id == entry.user_id,
+                    Vacation.date_from <= new_date,
+                    Vacation.date_to >= new_date,
+                ))
+            )
+            if vacation_result.scalar_one_or_none():
+                raise ValueError("Cannot move time entry to a day with vacation")
 
         # Check for overlapping if time is being changed
         if 'start_time' in update_data or 'end_time' in update_data:
@@ -233,3 +292,79 @@ class TimeEntryService:
             .distinct()
         )
         return [row[0] for row in result.fetchall()]
+
+    async def get_weekly_hours(self, user_id: int, target_date: date) -> float:
+        """Get total work hours for the week containing the target date."""
+        from datetime import timedelta
+        # Get Monday of the week
+        weekday = target_date.weekday()
+        week_start = target_date - timedelta(days=weekday)
+        week_end = week_start + timedelta(days=6)
+
+        entries = await self.get_user_entries_for_range(user_id, week_start, week_end)
+        total_minutes = sum(e.duration_minutes for e in entries)
+        return total_minutes / 60
+
+    async def get_monthly_hours(self, user_id: int, target_date: date) -> float:
+        """Get total work hours for the month containing the target date."""
+        import calendar
+        # Get first and last day of the month
+        month_start = date(target_date.year, target_date.month, 1)
+        last_day = calendar.monthrange(target_date.year, target_date.month)[1]
+        month_end = date(target_date.year, target_date.month, last_day)
+
+        entries = await self.get_user_entries_for_range(user_id, month_start, month_end)
+        total_minutes = sum(e.duration_minutes for e in entries)
+        return total_minutes / 60
+
+    @staticmethod
+    def get_monthly_hours_limit(year: int, month: int) -> int:
+        """Get the maximum work hours for a given month based on Mon-Fri count.
+
+        Note: this synchronous variant does NOT subtract holidays. Prefer
+        get_monthly_hours_limit_with_holidays(db, year, month) when accuracy is needed.
+        """
+        import calendar
+        working_days = 0
+        last_day = calendar.monthrange(year, month)[1]
+        for day in range(1, last_day + 1):
+            weekday = date(year, month, day).weekday()
+            if weekday < 5:  # Monday = 0, Friday = 4
+                working_days += 1
+        return working_days * 8
+
+    @staticmethod
+    async def get_monthly_hours_limit_with_holidays(db: AsyncSession, year: int, month: int) -> int:
+        """Get the maximum work hours for a given month, excluding weekends AND holidays."""
+        import calendar as _calendar
+        from app.models.calendar_day import CalendarDay, DayType
+        from app.services.calendar_service import CalendarService
+
+        last_day = _calendar.monthrange(year, month)[1]
+        month_start = date(year, month, 1)
+        month_end = date(year, month, last_day)
+
+        calendar_service = CalendarService(db)
+        await calendar_service.ensure_days_exist(month_start, month_end)
+
+        # Count Mon-Fri days
+        working_days = 0
+        for day in range(1, last_day + 1):
+            if date(year, month, day).weekday() < 5:
+                working_days += 1
+
+        # Subtract holidays that fall on Mon-Fri
+        result = await db.execute(
+            select(CalendarDay).where(
+                CalendarDay.date >= month_start,
+                CalendarDay.date <= month_end,
+                CalendarDay.day_type == DayType.HOLIDAY,
+            )
+        )
+        for cd in result.scalars().all():
+            if cd.date.weekday() < 5:
+                working_days -= 1
+
+        if working_days < 0:
+            working_days = 0
+        return working_days * 8

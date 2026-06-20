@@ -8,6 +8,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import api from '../services/api';
 import { Notification } from '../types';
 import DynamicIcon from './DynamicIcon';
+import { useResponsive } from '../hooks/useResponsive';
 
 dayjs.extend(relativeTime);
 
@@ -17,6 +18,7 @@ const NotificationBell: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const { isMobile } = useResponsive();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -79,6 +81,8 @@ const NotificationBell: React.FC = () => {
         return <DynamicIcon name="Calendar" size={16} />;
       case 'missing_entry':
         return <DynamicIcon name="AlertCircle" size={16} />;
+      case 'overtime_warning':
+        return <DynamicIcon name="Clock" size={16} />;
       default:
         return <DynamicIcon name="Bell" size={16} />;
     }
@@ -118,12 +122,54 @@ const NotificationBell: React.FC = () => {
       }
     }
 
+    // Handle birthday notifications with JSON message
+    if (notification.type === 'birthday' && notification.title.startsWith('notification.')) {
+      try {
+        const data = JSON.parse(notification.message);
+        if (notification.title === 'notification.birthday.todayTitle') {
+          title = t('notification.birthday.todayTitle');
+          notificationMessage = t('notification.birthday.todayMessage', { name: data.name });
+        } else {
+          title = t('notification.birthday.upcomingTitle');
+          notificationMessage = t('notification.birthday.upcomingMessage', { name: data.name, date: data.date });
+        }
+      } catch {
+        // If parsing fails, use original values
+      }
+    }
+
+    // Handle overtime_warning notifications with JSON message
+    if (notification.type === 'overtime_warning' && notification.title.startsWith('notification.')) {
+      try {
+        const data = JSON.parse(notification.message);
+        if (data.warning_type === 'weekly') {
+          title = t('notification.overtime.weeklyTitle');
+          notificationMessage = t('notification.overtime.weeklyMessage', {
+            employee_name: data.employee_name,
+            current_hours: data.current_hours,
+            limit_hours: data.limit_hours,
+            projected_hours: data.projected_hours
+          });
+        } else {
+          title = t('notification.overtime.monthlyTitle');
+          notificationMessage = t('notification.overtime.monthlyMessage', {
+            employee_name: data.employee_name,
+            current_hours: data.current_hours,
+            limit_hours: data.limit_hours,
+            projected_hours: data.projected_hours
+          });
+        }
+      } catch {
+        // If parsing fails, use original values
+      }
+    }
+
     return { title, message: notificationMessage };
   };
 
   const dropdownContent = (
     <div style={{
-      width: 360,
+      width: isMobile ? 'calc(100vw - 32px)' : 360,
       maxHeight: 400,
       overflow: 'auto',
       backgroundColor: token.colorBgContainer,
@@ -176,12 +222,15 @@ const NotificationBell: React.FC = () => {
                     handleMarkAsRead(notification.id);
                   }
                   // Navigate based on notification type
-                  if (notification.type === 'change_request') {
+                  if (notification.type === 'change_request' || notification.type === 'overtime_warning') {
                     setOpen(false);
                     navigate('/admin/change-requests');
                   } else if (notification.type === 'missing_entry' || notification.type === 'weekly_reminder') {
                     setOpen(false);
                     navigate('/calendar');
+                  } else if (notification.type === 'birthday' || notification.type === 'name_day') {
+                    setOpen(false);
+                    navigate('/admin/employees');
                   }
                 }}
               >

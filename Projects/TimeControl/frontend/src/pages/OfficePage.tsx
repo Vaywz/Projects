@@ -17,9 +17,11 @@ import {
   Segmented,
   Table,
   theme,
+  Select,
+  Input,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { UserOutlined, HomeOutlined, CalendarOutlined, LaptopOutlined, EditOutlined, DeleteOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { UserOutlined, HomeOutlined, CalendarOutlined, LaptopOutlined, EditOutlined, DeleteOutlined, LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import api from '../services/api';
@@ -37,13 +39,16 @@ interface WorkplacePlan {
 
 const { Title, Text } = Typography;
 
-// Status colors for borders
+// Status colors for borders (matching Ant Design Tag preset colors)
 const STATUS_COLORS: Record<EmployeeStatus, string> = {
   office: '#52c41a',     // green
-  remote: '#722ed1',     // purple
-  sick: '#faad14',       // yellow
-  vacation: '#1890ff',   // blue
-  excused: '#eb2f96',    // pink
+  remote: '#13c2c2',     // cyan
+  sick: '#faad14',       // gold
+  vacation: '#2f54eb',   // geekblue
+  excused: '#722ed1',    // purple
+  unexcused: '#fa8c16',  // orange
+  holiday: '#f5222d',    // red
+  dayoff: '#eb2f96',     // pink
   no_plan: '#d9d9d9',    // gray
 };
 
@@ -53,6 +58,9 @@ const STATUS_LABELS: Record<EmployeeStatus, string> = {
   sick: 'calendar.sickDay',
   vacation: 'calendar.vacation',
   excused: 'calendar.excusedAbsence',
+  unexcused: 'calendar.unexcusedAbsence',
+  holiday: 'calendar.holidayStatus',
+  dayoff: 'calendar.dayoff',
   no_plan: 'office.noOneScheduled',
 };
 
@@ -75,6 +83,14 @@ const OfficePage: React.FC = () => {
   const [myPlans, setMyPlans] = useState<WorkplacePlan[]>([]);
   const [planLoading, setPlanLoading] = useState(false);
   const [employees, setEmployees] = useState<EmployeeRowData[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<number | 'all'>('all');
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchText), 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
 
   // Get icon for status from settings
   const getStatusIcon = (status: EmployeeStatus, size: number = 16) => {
@@ -84,6 +100,9 @@ const OfficePage: React.FC = () => {
       sick: settings.icon_sick,
       vacation: settings.icon_vacation,
       excused: settings.icon_excused,
+      unexcused: settings.icon_unexcused,
+      holiday: settings.icon_holiday,
+      dayoff: settings.icon_dayoff,
       no_plan: 'CircleOff',
     };
     return <DynamicIcon name={iconMap[status]} size={size} />;
@@ -303,8 +322,8 @@ const OfficePage: React.FC = () => {
       children: (
         <Card loading={loading}>
           {/* Month navigation */}
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Space>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <Space wrap>
               <Button icon={<LeftOutlined />} onClick={() => handleMonthChange(-1)} />
               <DatePicker
                 picker="month"
@@ -315,13 +334,40 @@ const OfficePage: React.FC = () => {
               />
               <Button icon={<RightOutlined />} onClick={() => handleMonthChange(1)} />
               <Button onClick={() => setCurrentMonth(dayjs())}>{t('calendar.today')}</Button>
+              <Input
+                placeholder={t('common.search')}
+                prefix={<SearchOutlined />}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                allowClear
+                style={{ width: 200 }}
+              />
+              <Select
+                value={selectedEmployee}
+                onChange={setSelectedEmployee}
+                style={{ minWidth: 180 }}
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.children?.toString() || '').toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                <Select.Option value="all">{t('statistics.allEmployees')}</Select.Option>
+                {employees.map(emp => (
+                  <Select.Option key={emp.user_id} value={emp.user_id}>
+                    {emp.first_name} {emp.last_name}
+                  </Select.Option>
+                ))}
+              </Select>
             </Space>
             <Space wrap>
-              <Tag color="green"><DynamicIcon name={settings.icon_office} size={14} style={{ marginRight: 4 }} />{t('office.workFromOffice')}</Tag>
-              <Tag color="purple"><DynamicIcon name={settings.icon_remote} size={14} style={{ marginRight: 4 }} />{t('office.workFromHome')}</Tag>
-              <Tag color="gold"><DynamicIcon name={settings.icon_sick} size={14} style={{ marginRight: 4 }} />{t('calendar.sickDay')}</Tag>
-              <Tag color="blue"><DynamicIcon name={settings.icon_vacation} size={14} style={{ marginRight: 4 }} />{t('calendar.vacation')}</Tag>
-              <Tag color="magenta"><DynamicIcon name={settings.icon_excused} size={14} style={{ marginRight: 4 }} />{t('calendar.excusedAbsence')}</Tag>
+              <Tag color="green" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_office} size={14} style={{ marginRight: 4 }} />{t('office.workFromOffice')}</Tag>
+              <Tag color="cyan" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_remote} size={14} style={{ marginRight: 4 }} />{t('office.workFromHome')}</Tag>
+              <Tag color="gold" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_sick} size={14} style={{ marginRight: 4 }} />{t('calendar.sickDay')}</Tag>
+              <Tag color="geekblue" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_vacation} size={14} style={{ marginRight: 4 }} />{t('calendar.vacation')}</Tag>
+              <Tag color="purple" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_excused} size={14} style={{ marginRight: 4 }} />{t('calendar.excusedAbsence')}</Tag>
+              <Tag color="orange" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_unexcused} size={14} style={{ marginRight: 4 }} />{t('calendar.unexcusedAbsence')}</Tag>
+              <Tag color="red" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_holiday} size={14} style={{ marginRight: 4 }} />{t('calendar.holiday')}</Tag>
+              <Tag color="pink" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_dayoff} size={14} style={{ marginRight: 4 }} />{t('calendar.dayoff')}</Tag>
             </Space>
           </div>
 
@@ -329,7 +375,11 @@ const OfficePage: React.FC = () => {
           {employees.length > 0 ? (
             <Table
               columns={generateDayColumns()}
-              dataSource={employees}
+              dataSource={(selectedEmployee === 'all' ? employees : employees.filter(e => e.user_id === selectedEmployee)).filter(e => {
+                if (!debouncedSearch) return true;
+                const name = `${e.first_name || ''} ${e.last_name || ''}`.toLowerCase();
+                return name.includes(debouncedSearch.toLowerCase());
+              })}
               pagination={false}
               scroll={{ x: 'max-content' }}
               size="small"

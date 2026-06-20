@@ -22,6 +22,7 @@ class ChangeRequestService:
             select(ChangeRequest)
             .options(
                 joinedload(ChangeRequest.user).joinedload(User.profile),
+                joinedload(ChangeRequest.admin).joinedload(User.profile),
                 joinedload(ChangeRequest.time_entry)
             )
             .where(ChangeRequest.id == request_id)
@@ -114,6 +115,22 @@ class ChangeRequestService:
         if request.status != ChangeRequestStatus.PENDING:
             return None  # Already resolved
 
+        # Apply admin corrections to the request before resolving
+        if data.start_time is not None:
+            request.start_time = data.start_time
+        if data.end_time is not None:
+            request.end_time = data.end_time
+        if data.break_minutes is not None:
+            request.break_minutes = data.break_minutes
+        if data.date is not None:
+            request.date = data.date
+        if data.date_to is not None:
+            request.date_to = data.date_to
+        if data.workplace is not None:
+            request.workplace = data.workplace
+        if data.comment is not None:
+            request.comment = data.comment
+
         request.status = data.status
         request.admin_id = admin_id
         request.admin_comment = data.admin_comment
@@ -132,16 +149,46 @@ class ChangeRequestService:
         """Apply the approved change to time entries, vacations, or sick days."""
         # Time entry requests
         if request.request_type == ChangeRequestType.ADD:
-            entry = TimeEntry(
-                user_id=request.user_id,
-                date=request.date,
-                start_time=request.start_time,
-                end_time=request.end_time,
-                break_minutes=request.break_minutes or 0,
-                workplace=WorkplaceType(request.workplace) if request.workplace else WorkplaceType.OFFICE,
-                comment=request.comment,
+            # Check for overlapping entries to avoid duplicates
+            existing = await self.db.execute(
+                select(TimeEntry).where(and_(
+                    TimeEntry.user_id == request.user_id,
+                    TimeEntry.date == request.date,
+                ))
             )
-            self.db.add(entry)
+            existing_entries = list(existing.scalars().all())
+
+            new_start = request.start_time.hour * 60 + request.start_time.minute
+            new_end = request.end_time.hour * 60 + request.end_time.minute
+
+            # Find overlapping entry - update it instead of creating duplicate
+            overlapping = None
+            for e in existing_entries:
+                e_start = e.start_time.hour * 60 + e.start_time.minute
+                e_end = e.end_time.hour * 60 + e.end_time.minute
+                if new_start < e_end and new_end > e_start:
+                    overlapping = e
+                    break
+
+            if overlapping:
+                # Update existing entry instead of creating duplicate
+                overlapping.start_time = request.start_time
+                overlapping.end_time = request.end_time
+                overlapping.break_minutes = request.break_minutes or 0
+                overlapping.workplace = WorkplaceType(request.workplace) if request.workplace else overlapping.workplace
+                if request.comment is not None:
+                    overlapping.comment = request.comment
+            else:
+                entry = TimeEntry(
+                    user_id=request.user_id,
+                    date=request.date,
+                    start_time=request.start_time,
+                    end_time=request.end_time,
+                    break_minutes=request.break_minutes or 0,
+                    workplace=WorkplaceType(request.workplace) if request.workplace else WorkplaceType.OFFICE,
+                    comment=request.comment,
+                )
+                self.db.add(entry)
 
         elif request.request_type == ChangeRequestType.EDIT:
             if request.time_entry_id:
@@ -250,6 +297,18 @@ class ChangeRequestService:
         if request.user_id != user_id:
             return False
         if request.status != ChangeRequestStatus.PENDING:
+            return False
+        await self.db.delete(request)
+        await self.db.flush()
+        return True
+
+    async def admin_delete(self, request_id: int) -> bool:
+        """Delete any change request (admin only)."""
+        result = await self.db.execute(
+            select(ChangeRequest).where(ChangeRequest.id == request_id)
+        )
+        request = result.scalar_one_or_none()
+        if not request:
             return False
         await self.db.delete(request)
         await self.db.flush()

@@ -9,6 +9,7 @@ import {
   Button,
   Space,
   Typography,
+  Drawer,
   theme,
 } from 'antd';
 import {
@@ -20,6 +21,7 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  MenuOutlined,
   SettingOutlined,
   HomeOutlined,
   FileTextOutlined,
@@ -29,6 +31,7 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useThemeStore } from '../../store/themeStore';
+import { useResponsive } from '../../hooks/useResponsive';
 import LanguageSelector from '../LanguageSelector';
 import NotificationBell from '../NotificationBell';
 
@@ -37,6 +40,8 @@ const { Text } = Typography;
 
 const MainLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isMobile, contentPadding, contentMargin } = useResponsive();
   const { user, logout } = useAuthStore();
   const { settings, fetchSettings } = useSettingsStore();
   const { mode, toggleMode } = useThemeStore();
@@ -158,50 +163,73 @@ const MainLayout: React.FC = () => {
     return path;
   };
 
-  return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        theme={isDark ? 'dark' : 'light'}
+  const siderContent = (
+    <>
+      <div
         style={{
-          boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)',
-          background: token.colorBgContainer,
+          height: 64,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
+          padding: '8px',
         }}
       >
-        <div
+        <img
+          src={settings.logo_url || "/logo.svg"}
+          alt="Company Logo"
           style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderBottom: `1px solid ${token.colorBorderSecondary}`,
-            padding: '8px',
+            height: collapsed && !isMobile ? 32 : 48,
+            width: 'auto',
+            transition: 'height 0.2s'
+          }}
+        />
+      </div>
+      <Menu
+        mode="inline"
+        selectedKeys={[getSelectedKey()]}
+        items={menuItems}
+        onClick={({ key }) => {
+          navigate(key);
+          if (isMobile) setDrawerOpen(false);
+        }}
+        style={{ borderRight: 0 }}
+      />
+    </>
+  );
+
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+      {isMobile ? (
+        <Drawer
+          placement="left"
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          width={260}
+          styles={{ body: { padding: 0, background: token.colorBgContainer } }}
+          closable={false}
+        >
+          {siderContent}
+        </Drawer>
+      ) : (
+        <Sider
+          trigger={null}
+          collapsible
+          collapsed={collapsed}
+          width={240}
+          theme={isDark ? 'dark' : 'light'}
+          style={{
+            boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)',
+            background: token.colorBgContainer,
           }}
         >
-          <img
-            src={settings.logo_url || "/logo.svg"}
-            alt="Company Logo"
-            style={{
-              height: collapsed ? 32 : 48,
-              width: 'auto',
-              transition: 'height 0.2s'
-            }}
-          />
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[getSelectedKey()]}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-          style={{ borderRight: 0 }}
-        />
-      </Sider>
+          {siderContent}
+        </Sider>
+      )}
       <Layout>
         <Header
           style={{
-            padding: '0 24px',
+            padding: isMobile ? '0 12px' : '0 24px',
             background: token.colorBgContainer,
             display: 'flex',
             alignItems: 'center',
@@ -209,13 +237,22 @@ const MainLayout: React.FC = () => {
             boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: 16, width: 64, height: 64 }}
-          />
-          <Space>
+          {isMobile ? (
+            <Button
+              type="text"
+              icon={<MenuOutlined />}
+              onClick={() => setDrawerOpen(true)}
+              style={{ fontSize: 16, width: 48, height: 64 }}
+            />
+          ) : (
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              style={{ fontSize: 16, width: 64, height: 64 }}
+            />
+          )}
+          <Space size={isMobile ? 4 : 8}>
             <Button
               type="text"
               icon={isDark ? <SunOutlined /> : <MoonOutlined />}
@@ -223,26 +260,28 @@ const MainLayout: React.FC = () => {
               style={{ fontSize: 16 }}
             />
             <NotificationBell />
-            <LanguageSelector />
+            {!isMobile && <LanguageSelector />}
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space style={{ cursor: 'pointer' }}>
                 <Avatar
                   src={user?.profile?.avatar_url}
                   icon={!user?.profile?.avatar_url && <UserOutlined />}
                 />
-                <Text>
-                  {user?.profile
-                    ? `${user.profile.first_name} ${user.profile.last_name}`
-                    : user?.email}
-                </Text>
+                {!isMobile && (
+                  <Text>
+                    {user?.profile
+                      ? `${user.profile.first_name} ${user.profile.last_name}`
+                      : user?.email}
+                  </Text>
+                )}
               </Space>
             </Dropdown>
           </Space>
         </Header>
         <Content
           style={{
-            margin: 24,
-            padding: 24,
+            margin: contentMargin,
+            padding: contentPadding,
             background: token.colorBgContainer,
             borderRadius: 8,
             minHeight: 280,

@@ -17,6 +17,7 @@ class CompanySettingsService:
 
         settings_dict = {s.key: s.value for s in settings}
 
+        email_val = settings_dict.get('email_notifications_enabled', 'true')
         return CompanySettingsResponse(
             logo_url=settings_dict.get('logo_url'),
             icon_vacation=settings_dict.get('icon_vacation', 'Palmtree'),
@@ -25,6 +26,9 @@ class CompanySettingsService:
             icon_remote=settings_dict.get('icon_remote', 'Monitor'),
             icon_holiday=settings_dict.get('icon_holiday', 'Gift'),
             icon_excused=settings_dict.get('icon_excused', 'CircleCheckBig'),
+            icon_unexcused=settings_dict.get('icon_unexcused', 'CircleX'),
+            icon_dayoff=settings_dict.get('icon_dayoff', 'Coffee'),
+            email_notifications_enabled=email_val.lower() == 'true' if email_val else True,
         )
 
     async def get_setting(self, key: str) -> Optional[CompanySetting]:
@@ -65,7 +69,8 @@ class CompanySettingsService:
             raise ValueError(f"Icon '{icon_name}' is not in the allowed icons list")
 
         valid_keys = ['icon_vacation', 'icon_sick', 'icon_office',
-                      'icon_remote', 'icon_holiday', 'icon_excused']
+                      'icon_remote', 'icon_holiday', 'icon_excused',
+                      'icon_unexcused', 'icon_dayoff']
         if icon_type not in valid_keys:
             raise ValueError(f"Invalid icon type: {icon_type}")
 

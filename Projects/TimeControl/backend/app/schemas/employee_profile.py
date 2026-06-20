@@ -3,7 +3,6 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from app.models.time_entry import WorkplaceType
 from app.models.user import UserRole
-from app.models.employee_profile import EmploymentType, PaymentType
 
 
 class EmployeeProfileBase(BaseModel):
@@ -15,15 +14,19 @@ class EmployeeProfileBase(BaseModel):
     department: Optional[str] = Field(None, max_length=100)
     default_workplace: Optional[WorkplaceType] = WorkplaceType.OFFICE
     work_email: Optional[str] = Field(None, max_length=255)
-    employment_type: Optional[EmploymentType] = EmploymentType.FULL_TIME
-    payment_type: Optional[PaymentType] = PaymentType.SALARY
+    employment_type: Optional[str] = 'full_time'
+    payment_type: Optional[str] = 'salary'
     birthday: Optional[date] = None
     name_day: Optional[date] = None
     contract_number: Optional[str] = Field(None, max_length=50)
     employment_start_date: Optional[date] = None
+    employment_end_date: Optional[date] = None
+    employment_end_reason: Optional[str] = Field(None, max_length=500)
     emergency_contact_name: Optional[str] = Field(None, max_length=200)
     emergency_contact_phone: Optional[str] = Field(None, max_length=50)
     declared_address: Optional[str] = Field(None, max_length=500)
+    actual_address: Optional[str] = Field(None, max_length=500)
+    personal_code: Optional[str] = Field(None, max_length=20)
 
 
 class EmployeeProfileCreate(EmployeeProfileBase):
@@ -40,15 +43,19 @@ class EmployeeProfileUpdate(BaseModel):
     department: Optional[str] = Field(None, max_length=100)
     default_workplace: Optional[WorkplaceType] = None
     work_email: Optional[str] = Field(None, max_length=255)
-    employment_type: Optional[EmploymentType] = None
-    payment_type: Optional[PaymentType] = None
+    employment_type: Optional[str] = None
+    payment_type: Optional[str] = None
     birthday: Optional[date] = None
     name_day: Optional[date] = None
     contract_number: Optional[str] = Field(None, max_length=50)
     employment_start_date: Optional[date] = None
+    employment_end_date: Optional[date] = None
+    employment_end_reason: Optional[str] = Field(None, max_length=500)
     emergency_contact_name: Optional[str] = Field(None, max_length=200)
     emergency_contact_phone: Optional[str] = Field(None, max_length=50)
     declared_address: Optional[str] = Field(None, max_length=500)
+    actual_address: Optional[str] = Field(None, max_length=500)
+    personal_code: Optional[str] = Field(None, max_length=20)
 
 
 class EmployeeProfileResponse(BaseModel):
@@ -63,15 +70,19 @@ class EmployeeProfileResponse(BaseModel):
     department: Optional[str]
     default_workplace: Optional[WorkplaceType]
     work_email: Optional[str]
-    employment_type: Optional[EmploymentType]
-    payment_type: Optional[PaymentType]
+    employment_type: Optional[str]
+    payment_type: Optional[str]
     birthday: Optional[date]
     name_day: Optional[date]
     contract_number: Optional[str]
     employment_start_date: Optional[date]
+    employment_end_date: Optional[date]
+    employment_end_reason: Optional[str]
     emergency_contact_name: Optional[str]
     emergency_contact_phone: Optional[str]
     declared_address: Optional[str]
+    actual_address: Optional[str]
+    personal_code: Optional[str]
     created_at: datetime
     updated_at: datetime
 
@@ -84,6 +95,7 @@ class EmployeeFullResponse(BaseModel):
     email: str
     role: UserRole
     is_active: bool
+    is_employee: bool
     created_at: datetime
     profile: Optional[EmployeeProfileResponse]
 

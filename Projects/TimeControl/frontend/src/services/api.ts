@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 class ApiService {
   private client: AxiosInstance;
@@ -31,7 +31,10 @@ class ApiService {
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Don't try to refresh the refresh endpoint itself (prevents infinite loop)
+        const isRefreshRequest = originalRequest?.url?.includes('/auth/refresh');
+
+        if (error.response?.status === 401 && !originalRequest._retry && !isRefreshRequest) {
           originalRequest._retry = true;
 
           const refreshToken = localStorage.getItem('refresh_token');
@@ -48,9 +51,9 @@ class ApiService {
               originalRequest.headers.Authorization = `Bearer ${access_token}`;
               return this.client(originalRequest);
             } catch (refreshError) {
-              // Refresh failed, logout
               this.logout();
               window.location.href = '/login';
+              return Promise.reject(refreshError);
             }
           }
         }
@@ -107,6 +110,20 @@ class ApiService {
     return response.data;
   }
 
+  async getWeeklyHours(date: string) {
+    const response = await this.client.get('/time-entries/weekly-hours', {
+      params: { date },
+    });
+    return response.data;
+  }
+
+  async getMonthlyHours(date: string) {
+    const response = await this.client.get('/time-entries/monthly-hours', {
+      params: { date },
+    });
+    return response.data;
+  }
+
   async createTimeEntry(data: any) {
     const response = await this.client.post('/time-entries', data);
     return response.data;
@@ -129,6 +146,11 @@ class ApiService {
 
   async getMySickDays() {
     const response = await this.client.get('/day-status/my-sick-days');
+    return response.data;
+  }
+
+  async getMyDayOffs() {
+    const response = await this.client.get('/day-status/my-day-offs');
     return response.data;
   }
 
@@ -216,9 +238,9 @@ class ApiService {
   }
 
   // Admin endpoints
-  async getEmployees(activeOnly: boolean = true) {
+  async getEmployees(activeOnly: boolean = true, archived: boolean = false) {
     const response = await this.client.get('/admin/employees', {
-      params: { active_only: activeOnly },
+      params: { active_only: activeOnly, archived },
     });
     return response.data;
   }
@@ -297,6 +319,11 @@ class ApiService {
     return response.data;
   }
 
+  async adminUpdateTimeEntry(entryId: number, data: any) {
+    const response = await this.client.put(`/admin/time-entries/${entryId}`, data);
+    return response.data;
+  }
+
   async createEmployeeDayStatus(userId: number, data: { date: string; status: string; note?: string }) {
     const response = await this.client.post(`/admin/employees/${userId}/day-status`, data);
     return response.data;
@@ -304,6 +331,21 @@ class ApiService {
 
   async deleteEmployeeDayStatus(userId: number, statusId: number) {
     await this.client.delete(`/admin/employees/${userId}/day-status/${statusId}`);
+  }
+
+  // Birthdays
+  async getUpcomingBirthdays(daysAhead: number = 2) {
+    const response = await this.client.get('/admin/birthdays/upcoming', {
+      params: { days_ahead: daysAhead },
+    });
+    return response.data;
+  }
+
+  async getUpcomingNameDays(daysAhead: number = 2) {
+    const response = await this.client.get('/admin/namedays/upcoming', {
+      params: { days_ahead: daysAhead },
+    });
+    return response.data;
   }
 
   // Workplace Plans
@@ -355,6 +397,11 @@ class ApiService {
     icon_excused?: string;
   }) {
     const response = await this.client.put('/admin/settings/icons', data);
+    return response.data;
+  }
+
+  async updateEmailNotifications(enabled: boolean) {
+    const response = await this.client.put('/admin/settings/email-notifications', { enabled });
     return response.data;
   }
 
@@ -424,8 +471,17 @@ class ApiService {
     return response.data;
   }
 
-  async resolveChangeRequest(id: number, data: { status: string; admin_comment?: string }) {
+  async resolveChangeRequest(id: number, data: { status: string; admin_comment?: string; start_time?: string; end_time?: string; break_minutes?: number; date?: string; date_to?: string; workplace?: string; comment?: string }) {
     const response = await this.client.put(`/change-requests/admin/${id}`, data);
+    return response.data;
+  }
+
+  async adminDeleteChangeRequest(id: number) {
+    await this.client.delete(`/change-requests/admin/${id}`);
+  }
+
+  async adminBulkDeleteChangeRequests(ids: number[]) {
+    const response = await this.client.post('/change-requests/admin/bulk-delete', { ids });
     return response.data;
   }
 
@@ -442,6 +498,17 @@ class ApiService {
 
   async deleteDepartment(id: number) {
     await this.client.delete(`/departments/${id}`);
+  }
+
+  // Custom employment/payment types
+  async getCustomTypes() {
+    const response = await this.client.get('/admin/settings/custom-types');
+    return response.data;
+  }
+
+  async updateCustomTypes(data: { employment_types?: string[]; payment_types?: string[] }) {
+    const response = await this.client.put('/admin/settings/custom-types', data);
+    return response.data;
   }
 
   // Notifications
@@ -470,6 +537,26 @@ class ApiService {
   async getNotificationSettings() {
     const response = await this.client.get('/notifications/settings');
     return response.data;
+  }
+
+  // Work Schedule Templates
+  async getScheduleTemplates() {
+    const response = await this.client.get('/work-schedule-templates');
+    return response.data;
+  }
+
+  async createScheduleTemplate(data: { name: string; schedule: any }) {
+    const response = await this.client.post('/work-schedule-templates', data);
+    return response.data;
+  }
+
+  async updateScheduleTemplate(id: number, data: { name?: string; schedule?: any }) {
+    const response = await this.client.put(`/work-schedule-templates/${id}`, data);
+    return response.data;
+  }
+
+  async deleteScheduleTemplate(id: number) {
+    await this.client.delete(`/work-schedule-templates/${id}`);
   }
 
   async updateNotificationSettings(data: {

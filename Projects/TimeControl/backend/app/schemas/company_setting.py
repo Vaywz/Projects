@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 # Predefined list of allowed Lucide icons
 ALLOWED_ICONS = [
-    "Palmtree", "Cross", "Building2", "Monitor", "Gift", "CircleCheckBig",
+    "Palmtree", "Cross", "Building2", "Monitor", "Gift", "CircleCheckBig", "CircleX",
     "Home", "Briefcase", "Coffee", "Sun", "Moon", "Star", "Heart",
     "Smile", "Frown", "ThumbsUp", "ThumbsDown", "Check", "X",
     "Calendar", "Clock", "User", "Users", "MapPin", "Plane",
@@ -54,6 +54,9 @@ class CompanySettingsResponse(BaseModel):
     icon_remote: str = "Monitor"
     icon_holiday: str = "Gift"
     icon_excused: str = "CircleCheckBig"
+    icon_unexcused: str = "CircleX"
+    icon_dayoff: str = "Coffee"
+    email_notifications_enabled: bool = True
 
 
 class IconSettingsUpdate(BaseModel):
@@ -64,6 +67,8 @@ class IconSettingsUpdate(BaseModel):
     icon_remote: Optional[str] = Field(None, description="Lucide icon name for remote work")
     icon_holiday: Optional[str] = Field(None, description="Lucide icon name for holiday")
     icon_excused: Optional[str] = Field(None, description="Lucide icon name for excused absence")
+    icon_unexcused: Optional[str] = Field(None, description="Lucide icon name for unexcused absence")
+    icon_dayoff: Optional[str] = Field(None, description="Lucide icon name for day off (part-time)")
 
 
 class AllowedIconsResponse(BaseModel):

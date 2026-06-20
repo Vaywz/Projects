@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.vacation import Vacation, VacationStatus
 from app.models.day_status import DayStatus, StatusType
+from app.models.time_entry import TimeEntry
 from app.schemas.vacation import VacationCreate, VacationUpdate
 
 
@@ -49,6 +50,29 @@ class VacationService:
 
     async def create(self, user_id: int, vacation_data: VacationCreate) -> Vacation:
         """Create a new vacation and set day statuses."""
+        # Check if any date in range has time entries
+        entry_result = await self.db.execute(
+            select(TimeEntry).where(and_(
+                TimeEntry.user_id == user_id,
+                TimeEntry.date >= vacation_data.date_from,
+                TimeEntry.date <= vacation_data.date_to,
+            ))
+        )
+        if entry_result.scalars().first():
+            raise ValueError("Cannot create vacation on days with time entries")
+
+        # Check if any date in range has sick/dayoff/excused status
+        status_result = await self.db.execute(
+            select(DayStatus).where(and_(
+                DayStatus.user_id == user_id,
+                DayStatus.date >= vacation_data.date_from,
+                DayStatus.date <= vacation_data.date_to,
+                DayStatus.status.in_([StatusType.SICK, StatusType.DAYOFF, StatusType.EXCUSED])
+            ))
+        )
+        if status_result.scalar_one_or_none():
+            raise ValueError("Cannot create vacation on days with sick day or day off")
+
         # Check for overlapping vacations
         overlapping = await self._check_overlap(
             user_id,
@@ -86,6 +110,29 @@ class VacationService:
         if 'date_from' in update_data or 'date_to' in update_data:
             new_from = update_data.get('date_from', vacation.date_from)
             new_to = update_data.get('date_to', vacation.date_to)
+
+            # Check if any new date in range has time entries
+            entry_result = await self.db.execute(
+                select(TimeEntry).where(and_(
+                    TimeEntry.user_id == vacation.user_id,
+                    TimeEntry.date >= new_from,
+                    TimeEntry.date <= new_to,
+                ))
+            )
+            if entry_result.scalars().first():
+                raise ValueError("Cannot create vacation on days with time entries")
+
+            # Check if any new date in range has sick/dayoff/excused status
+            status_result = await self.db.execute(
+                select(DayStatus).where(and_(
+                    DayStatus.user_id == vacation.user_id,
+                    DayStatus.date >= new_from,
+                    DayStatus.date <= new_to,
+                    DayStatus.status.in_([StatusType.SICK, StatusType.DAYOFF, StatusType.EXCUSED])
+                ))
+            )
+            if status_result.scalar_one_or_none():
+                raise ValueError("Cannot create vacation on days with sick day or day off")
 
             overlapping = await self._check_overlap(
                 vacation.user_id,

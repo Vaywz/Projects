@@ -1,5 +1,5 @@
 from .user import User, UserRole
-from .employee_profile import EmployeeProfile, EmploymentType, PaymentType
+from .employee_profile import EmployeeProfile
 from .calendar_day import CalendarDay, DayType
 from .time_entry import TimeEntry, WorkplaceType
 from .day_status import DayStatus, StatusType
@@ -9,13 +9,12 @@ from .company_setting import CompanySetting
 from .change_request import ChangeRequest, ChangeRequestStatus, ChangeRequestType
 from .department import Department
 from .notification import Notification, NotificationSettings, NotificationType
+from .work_schedule_template import WorkScheduleTemplate
 
 __all__ = [
     "User",
     "UserRole",
     "EmployeeProfile",
-    "EmploymentType",
-    "PaymentType",
     "CalendarDay",
     "DayType",
     "TimeEntry",
@@ -33,4 +32,5 @@ __all__ = [
     "Notification",
     "NotificationSettings",
     "NotificationType",
+    "WorkScheduleTemplate",
 ]

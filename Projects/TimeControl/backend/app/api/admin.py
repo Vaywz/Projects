@@ -1,14 +1,17 @@
 from datetime import date
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, HTTPException, status, Query, UploadFile, File, Request
+from pydantic import BaseModel
+import json
 import os
 import uuid
+import logging
 
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from app.schemas.employee_profile import EmployeeProfileUpdate, EmployeeFullResponse
 from app.schemas.stats import PeriodType, StatsResponse
 from app.schemas.day_status import DayStatusCreate, DayStatusResponse
-from app.schemas.time_entry import TimeEntryCreate, TimeEntryResponse
+from app.schemas.time_entry import TimeEntryCreate, TimeEntryUpdate, TimeEntryResponse, TimeEntryCreateAdmin, TimeEntryUpdateAdmin
 from app.schemas.company_setting import (
     CompanySettingsResponse,
     IconSettingsUpdate,
@@ -30,12 +33,13 @@ router = APIRouter()
 @router.get("/employees", response_model=List[EmployeeFullResponse])
 async def get_all_employees(
     active_only: bool = Query(True),
+    archived: Optional[bool] = Query(False),
     current_admin: CurrentAdmin = None,
     db: DbSession = None
 ):
     """Get all employees."""
     user_service = UserService(db)
-    employees = await user_service.get_all_employees(active_only=active_only)
+    employees = await user_service.get_all_employees(active_only=active_only, archived=archived)
     return [EmployeeFullResponse.model_validate(e) for e in employees]
 
 
@@ -276,7 +280,7 @@ async def get_all_employees_summary(
     user_service = UserService(db)
     stats_service = StatsService(db)
 
-    employees = await user_service.get_all_employees(active_only=True)
+    employees = await user_service.get_all_employees(active_only=True, employees_only=True)
     summaries = []
 
     for employee in employees:
@@ -353,7 +357,7 @@ async def get_employee_time_entries(
 @router.post("/employees/{user_id}/time-entries", response_model=TimeEntryResponse, status_code=status.HTTP_201_CREATED)
 async def create_employee_time_entry(
     user_id: int,
-    entry_data: TimeEntryCreate,
+    entry_data: TimeEntryCreateAdmin,
     current_admin: CurrentAdmin = None,
     db: DbSession = None
 ):
@@ -369,7 +373,7 @@ async def create_employee_time_entry(
 
     time_entry_service = TimeEntryService(db)
     try:
-        entry = await time_entry_service.create(user_id, entry_data)
+        entry = await time_entry_service.create(user_id, entry_data, admin_bypass=True)
         await db.commit()
         return TimeEntryResponse(
             id=entry.id,
@@ -385,6 +389,35 @@ async def create_employee_time_entry(
             created_at=entry.created_at,
             updated_at=entry.updated_at,
         )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+# Update time entry for employee (admin)
+@router.put("/time-entries/{entry_id}", response_model=TimeEntryResponse)
+async def admin_update_time_entry(
+    entry_id: int,
+    entry_data: TimeEntryUpdateAdmin,
+    current_admin: CurrentAdmin = None,
+    db: DbSession = None
+):
+    """Update a time entry (admin only)."""
+    time_entry_service = TimeEntryService(db)
+    entry = await time_entry_service.get_by_id(entry_id)
+
+    if not entry:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Time entry not found"
+        )
+
+    try:
+        updated = await time_entry_service.update(entry_id, entry_data)
+        await db.commit()
+        return TimeEntryResponse.model_validate(updated)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -412,6 +445,7 @@ async def create_employee_day_status(
 
     day_status_service = DayStatusService(db)
     day_status = await day_status_service.create(user_id, status_data)
+    await db.commit()
     return DayStatusResponse.model_validate(day_status)
 
 
@@ -450,6 +484,20 @@ async def get_company_settings(
     """Get all company settings."""
     service = CompanySettingsService(db)
     return await service.get_all_settings()
+
+
+@router.put("/settings/email-notifications")
+async def update_email_notifications(
+    data: dict,
+    current_admin: CurrentAdmin = None,
+    db: DbSession = None
+):
+    """Toggle email notifications on/off."""
+    enabled = data.get("enabled", True)
+    service = CompanySettingsService(db)
+    await service.update_setting("email_notifications_enabled", str(enabled).lower())
+    await db.commit()
+    return {"email_notifications_enabled": enabled}
 
 
 @router.get("/settings/icons/allowed", response_model=AllowedIconsResponse)
@@ -540,6 +588,29 @@ async def delete_company_logo(
     await db.commit()
 
 
+# Upcoming birthdays
+@router.get("/birthdays/upcoming")
+async def get_upcoming_birthdays(
+    days_ahead: int = Query(2, ge=0, le=30),
+    current_admin: CurrentAdmin = None,
+    db: DbSession = None
+):
+    """Get employees with upcoming birthdays."""
+    user_service = UserService(db)
+    return await user_service.get_upcoming_birthdays(days_ahead)
+
+
+@router.get("/namedays/upcoming")
+async def get_upcoming_name_days(
+    days_ahead: int = Query(2, ge=0, le=30),
+    current_admin: CurrentAdmin = None,
+    db: DbSession = None
+):
+    """Get employees with upcoming name days."""
+    user_service = UserService(db)
+    return await user_service.get_upcoming_name_days(days_ahead)
+
+
 @router.post("/settings/icons/upload")
 async def upload_custom_icon(
     icon_type: str = Query(..., description="Icon type: icon_vacation, icon_sick, icon_office, icon_remote, icon_holiday, icon_excused"),
@@ -590,3 +661,56 @@ async def upload_custom_icon(
     await db.commit()
 
     return {"icon_url": icon_url, "icon_type": icon_type}
+
+
+# Custom employment/payment types
+
+class CustomTypesResponse(BaseModel):
+    employment_types: List[str]
+    payment_types: List[str]
+
+
+class CustomTypesUpdate(BaseModel):
+    employment_types: Optional[List[str]] = None
+    payment_types: Optional[List[str]] = None
+
+
+@router.get("/settings/custom-types", response_model=CustomTypesResponse)
+async def get_custom_types(
+    current_admin: CurrentAdmin = None,
+    db: DbSession = None
+):
+    """Get custom employment and payment types."""
+    service = CompanySettingsService(db)
+    emp_setting = await service.get_setting('custom_employment_types')
+    pay_setting = await service.get_setting('custom_payment_types')
+
+    employment_types = json.loads(emp_setting.value) if emp_setting and emp_setting.value else []
+    payment_types = json.loads(pay_setting.value) if pay_setting and pay_setting.value else []
+
+    return CustomTypesResponse(employment_types=employment_types, payment_types=payment_types)
+
+
+@router.put("/settings/custom-types", response_model=CustomTypesResponse)
+async def update_custom_types(
+    data: CustomTypesUpdate,
+    current_admin: CurrentAdmin = None,
+    db: DbSession = None
+):
+    """Update custom employment and payment types."""
+    service = CompanySettingsService(db)
+
+    if data.employment_types is not None:
+        await service.update_setting('custom_employment_types', json.dumps(data.employment_types))
+    if data.payment_types is not None:
+        await service.update_setting('custom_payment_types', json.dumps(data.payment_types))
+
+    await db.commit()
+
+    emp_setting = await service.get_setting('custom_employment_types')
+    pay_setting = await service.get_setting('custom_payment_types')
+
+    employment_types = json.loads(emp_setting.value) if emp_setting and emp_setting.value else []
+    payment_types = json.loads(pay_setting.value) if pay_setting and pay_setting.value else []
+
+    return CustomTypesResponse(employment_types=employment_types, payment_types=payment_types)

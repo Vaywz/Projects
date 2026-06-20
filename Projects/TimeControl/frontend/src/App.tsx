@@ -108,6 +108,10 @@ const App: React.FC = () => {
     checkAuth();
   }, [checkAuth]);
 
+  useEffect(() => {
+    document.body.style.backgroundColor = mode === 'dark' ? '#141414' : '#f5f5f5';
+  }, [mode]);
+
   if (isLoading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -120,6 +124,7 @@ const App: React.FC = () => {
     <ConfigProvider
       locale={currentLocale}
       theme={{
+        cssVar: true,
         algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
           colorPrimary: '#279CF1',

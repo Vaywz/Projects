@@ -14,6 +14,7 @@ import {
   Statistic,
   DatePicker,
   theme,
+  List,
 } from 'antd';
 import {
   UserOutlined,
@@ -24,8 +25,10 @@ import {
   ClockCircleOutlined,
   HomeOutlined,
   LaptopOutlined,
+  GiftOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useResponsive } from '../../hooks/useResponsive';
 import dayjs, { Dayjs } from 'dayjs';
 import api from '../../services/api';
 import { User } from '../../types';
@@ -33,15 +36,36 @@ import { User } from '../../types';
 const { Title, Text } = Typography;
 const { Search } = Input;
 
+interface BirthdayInfo {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  birthday: string;
+  days_until: number;
+  is_today: boolean;
+}
+
+interface NameDayInfo {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  name_day: string;
+  days_until: number;
+  is_today: boolean;
+}
+
 const AdminDashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const { isMobile } = useResponsive();
   const [employees, setEmployees] = useState<User[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<any>(null);
   const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs());
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState<BirthdayInfo[]>([]);
+  const [upcomingNameDays, setUpcomingNameDays] = useState<NameDayInfo[]>([]);
 
   const fetchData = async (month: Dayjs) => {
     setLoading(true);
@@ -67,8 +91,22 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fetchBirthdays = async () => {
+    try {
+      const [birthdays, nameDays] = await Promise.all([
+        api.getUpcomingBirthdays(2),
+        api.getUpcomingNameDays(2),
+      ]);
+      setUpcomingBirthdays(birthdays);
+      setUpcomingNameDays(nameDays);
+    } catch (error) {
+      console.error('Failed to fetch birthdays/name days:', error);
+    }
+  };
+
   useEffect(() => {
     fetchData(selectedMonth);
+    fetchBirthdays();
   }, [selectedMonth]);
 
   const handleMonthChange = (date: Dayjs | null) => {
@@ -106,30 +144,33 @@ const AdminDashboard: React.FC = () => {
   const formatHours = (hours: number) => {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    const hShort = t('common.hoursShort');
+    const mShort = t('common.minutesShort');
+    return m > 0 ? `${h}${hShort} ${m}${mShort}` : `${h}${hShort}`;
   };
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
+      <Row justify="space-between" align="middle" gutter={[0, 12]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md="auto">
           <Title level={3} style={{ margin: 0 }}>
             {t('admin.dashboard.title')}
           </Title>
         </Col>
-        <Col>
-          <Space>
+        <Col xs={24} md="auto">
+          <Space wrap>
             <DatePicker
               picker="month"
               value={selectedMonth}
               onChange={handleMonthChange}
               allowClear={false}
+              format="MM.YYYY"
             />
             <Search
               placeholder={t('admin.dashboard.searchPlaceholder')}
               onSearch={handleSearch}
               onChange={(e) => handleSearch(e.target.value)}
-              style={{ width: 250 }}
+              style={{ width: isMobile ? '100%' : 250 }}
             />
             <Button type="primary" onClick={() => navigate('/admin/employees')}>
               {t('admin.dashboard.manageEmployees')}
@@ -137,6 +178,74 @@ const AdminDashboard: React.FC = () => {
           </Space>
         </Col>
       </Row>
+
+      {/* Birthday Notifications */}
+      {upcomingBirthdays.length > 0 && (
+        <Card
+          style={{ marginBottom: 24 }}
+          title={
+            <Space>
+              <GiftOutlined style={{ color: '#eb2f96' }} />
+              {t('birthday.upcomingBirthdays')}
+            </Space>
+          }
+          size="small"
+        >
+          <List
+            dataSource={upcomingBirthdays}
+            renderItem={(item) => (
+              <List.Item>
+                <Space>
+                  <GiftOutlined style={{ color: item.is_today ? '#52c41a' : '#faad14' }} />
+                  <Text strong>{item.first_name} {item.last_name}</Text>
+                  {item.is_today ? (
+                    <Tag color="green">{t('birthday.today')}</Tag>
+                  ) : (
+                    <Tag color="gold">
+                      {t('birthday.inDays', { days: item.days_until })}
+                    </Tag>
+                  )}
+                  <Text type="secondary">({dayjs(item.birthday).format('DD.MM')})</Text>
+                </Space>
+              </List.Item>
+            )}
+          />
+        </Card>
+      )}
+
+      {/* Name Day Notifications */}
+      {upcomingNameDays.length > 0 && (
+        <Card
+          style={{ marginBottom: 24 }}
+          title={
+            <Space>
+              <GiftOutlined style={{ color: '#722ed1' }} />
+              {t('nameDay.upcomingNameDays')}
+            </Space>
+          }
+          size="small"
+        >
+          <List
+            dataSource={upcomingNameDays}
+            renderItem={(item) => (
+              <List.Item>
+                <Space>
+                  <GiftOutlined style={{ color: item.is_today ? '#52c41a' : '#faad14' }} />
+                  <Text strong>{item.first_name} {item.last_name}</Text>
+                  {item.is_today ? (
+                    <Tag color="green">{t('nameDay.today')}</Tag>
+                  ) : (
+                    <Tag color="gold">
+                      {t('nameDay.inDays', { days: item.days_until })}
+                    </Tag>
+                  )}
+                  <Text type="secondary">({dayjs(item.name_day).format('DD.MM')})</Text>
+                </Space>
+              </List.Item>
+            )}
+          />
+        </Card>
+      )}
 
       {/* Summary Stats */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>

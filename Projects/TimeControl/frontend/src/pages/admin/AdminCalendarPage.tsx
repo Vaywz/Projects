@@ -15,10 +15,12 @@ import {
   Segmented,
   DatePicker,
   theme,
+  Input,
 } from 'antd';
-import { CalendarOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { CalendarOutlined, LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import { CircleOff } from 'lucide-react';
 import dayjs, { Dayjs } from 'dayjs';
+import { useResponsive } from '../../hooks/useResponsive';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import api from '../../services/api';
 import { User, EmployeeWithStatus, EmployeeStatus, CalendarDay, TimeEntry } from '../../types';
@@ -29,13 +31,16 @@ dayjs.extend(isoWeek);
 
 const { Title, Text } = Typography;
 
-// Status colors
+// Status colors (matching Ant Design Tag preset colors)
 const STATUS_COLORS: Record<EmployeeStatus, string> = {
-  office: '#52c41a',
-  remote: '#722ed1',
-  sick: '#faad14',
-  vacation: '#1890ff',
-  excused: '#eb2f96',
+  office: '#52c41a',    // green
+  remote: '#13c2c2',    // cyan
+  sick: '#faad14',      // gold
+  vacation: '#2f54eb',  // geekblue
+  excused: '#722ed1',   // purple
+  unexcused: '#fa8c16', // orange
+  holiday: '#f5222d',   // red
+  dayoff: '#eb2f96',    // pink
   no_plan: '#d9d9d9',
 };
 
@@ -45,6 +50,9 @@ const STATUS_LABELS: Record<EmployeeStatus, string> = {
   sick: 'calendar.sickDay',
   vacation: 'calendar.vacation',
   excused: 'calendar.excusedAbsence',
+  unexcused: 'calendar.unexcusedAbsence',
+  holiday: 'calendar.holidayStatus',
+  dayoff: 'calendar.dayoff',
   no_plan: 'office.noOneScheduled',
 };
 
@@ -69,6 +77,7 @@ const AdminCalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { settings, fetchSettings } = useSettingsStore();
   const { token } = theme.useToken();
+  const { isMobile } = useResponsive();
 
   const getHolidayName = (calDay: CalendarDay): string | undefined => {
     if (!calDay.holiday_name) return undefined;
@@ -79,6 +88,13 @@ const AdminCalendarPage: React.FC = () => {
   };
   const [employees, setEmployees] = useState<User[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<number | 'all'>('all');
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchText), 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [currentWeek, setCurrentWeek] = useState(dayjs());
   const [dayEmployeesData, setDayEmployeesData] = useState<DayEmployeesData>({});
@@ -86,6 +102,33 @@ const AdminCalendarPage: React.FC = () => {
   const [employeeTimeData, setEmployeeTimeData] = useState<EmployeeTimeData>({});
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+
+  const getCalendarMonthsForRange = useCallback((start: Dayjs, end: Dayjs) => {
+    const months: { year: number; month: number }[] = [];
+    let cursor = start.startOf('month');
+
+    while (!cursor.isAfter(end, 'month')) {
+      months.push({ year: cursor.year(), month: cursor.month() + 1 });
+      cursor = cursor.add(1, 'month');
+    }
+
+    return months;
+  }, []);
+
+  const loadCalendarDaysForRange = useCallback(async (start: Dayjs, end: Dayjs) => {
+    const monthResponses = await Promise.all(
+      getCalendarMonthsForRange(start, end).map((item) => api.getCalendarMonth(item.year, item.month))
+    );
+
+    const calData: CalendarDayData = {};
+    monthResponses.forEach((response) => {
+      response.days.forEach((day: CalendarDay) => {
+        calData[day.date] = day;
+      });
+    });
+
+    return calData;
+  }, [getCalendarMonthsForRange]);
 
   // Get icon for status from settings
   const getStatusIcon = useCallback((status: EmployeeStatus, size: number = 12) => {
@@ -95,6 +138,9 @@ const AdminCalendarPage: React.FC = () => {
       sick: settings.icon_sick,
       vacation: settings.icon_vacation,
       excused: settings.icon_excused,
+      unexcused: settings.icon_unexcused,
+      holiday: settings.icon_holiday,
+      dayoff: settings.icon_dayoff,
       no_plan: 'CircleOff',
     };
     const iconName = iconMap[status];
@@ -118,18 +164,12 @@ const AdminCalendarPage: React.FC = () => {
   const fetchMonthData = useCallback(async (month: Dayjs) => {
     setLoading(true);
     try {
-      const startDate = month.startOf('month');
-      const endDate = month.endOf('month');
+      const startDate = month.startOf('month').startOf('isoWeek');
+      const endDate = month.endOf('month').endOf('isoWeek');
       const data: DayEmployeesData = {};
       const timeData: EmployeeTimeData = {};
 
-      // Fetch calendar data for holidays/weekends
-      const calendarResponse = await api.getCalendarMonth(month.year(), month.month() + 1);
-      const calData: CalendarDayData = {};
-      calendarResponse.days.forEach((day: CalendarDay) => {
-        calData[day.date] = day;
-      });
-      setCalendarData(calData);
+      setCalendarData(await loadCalendarDaysForRange(startDate, endDate));
 
       // Fetch data for each day of the month in parallel
       const datePromises: Promise<void>[] = [];
@@ -178,7 +218,7 @@ const AdminCalendarPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [t, employees]);
+  }, [t, employees, loadCalendarDaysForRange]);
 
   // Fetch week data
   const fetchWeekData = useCallback(async (week: Dayjs) => {
@@ -189,13 +229,7 @@ const AdminCalendarPage: React.FC = () => {
       const data: DayEmployeesData = {};
       const timeData: EmployeeTimeData = {};
 
-      // Fetch calendar data for holidays/weekends
-      const calendarResponse = await api.getCalendarMonth(week.year(), week.month() + 1);
-      const calData: CalendarDayData = {};
-      calendarResponse.days.forEach((day: CalendarDay) => {
-        calData[day.date] = day;
-      });
-      setCalendarData(calData);
+      setCalendarData(await loadCalendarDaysForRange(startDate, endDate));
 
       // Fetch data for each day of the week in parallel
       const datePromises: Promise<void>[] = [];
@@ -243,7 +277,7 @@ const AdminCalendarPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [t, employees]);
+  }, [t, employees, loadCalendarDaysForRange]);
 
   useEffect(() => {
     fetchEmployees();
@@ -262,11 +296,46 @@ const AdminCalendarPage: React.FC = () => {
 
   const getFilteredEmployeesForDate = (dateStr: string): EmployeeWithStatus[] => {
     const emps = dayEmployeesData[dateStr] || [];
-    if (selectedEmployee === 'all') {
-      // Show all employees with their status
-      return emps;
+    const date = dayjs(dateStr);
+    const isWeekend = date.day() === 0 || date.day() === 6;
+
+    let filtered = emps;
+
+    // On weekends, only show employees who have time entries
+    if (isWeekend) {
+      filtered = emps.filter(emp => {
+        const hasTimeEntries = employeeTimeData[emp.user_id]?.[dateStr]?.entries?.length > 0;
+        return hasTimeEntries;
+      });
     }
-    return emps.filter(e => e.user_id === selectedEmployee);
+
+    if (selectedEmployee !== 'all') {
+      filtered = filtered.filter(e => e.user_id === selectedEmployee);
+    }
+    if (debouncedSearch) {
+      filtered = filtered.filter(e => {
+        const name = `${e.first_name || ''} ${e.last_name || ''}`.toLowerCase();
+        return name.includes(debouncedSearch.toLowerCase());
+      });
+    }
+    return filtered;
+  };
+
+  // Calculate dynamic cell height based on max employees per day
+  const getMaxEmployeesPerDay = (): number => {
+    let maxCount = 0;
+    Object.values(dayEmployeesData).forEach(emps => {
+      let count = selectedEmployee === 'all' ? emps.length : emps.filter(e => e.user_id === selectedEmployee).length;
+      if (count > maxCount) maxCount = count;
+    });
+    return maxCount;
+  };
+
+  const getDynamicCellHeight = (): number => {
+    const maxEmps = getMaxEmployeesPerDay();
+    // Base height 80px + 20px per employee (min 120px, max 300px)
+    const calculatedHeight = 80 + (maxEmps * 20);
+    return Math.max(120, Math.min(300, calculatedHeight));
   };
 
   const getEmployeeTimeRangeForDate = (userId: number, dateStr: string): string | null => {
@@ -375,7 +444,7 @@ const AdminCalendarPage: React.FC = () => {
   };
 
   // Render day cell for month view
-  const renderDayCell = (date: Dayjs) => {
+  const renderDayCell = (date: Dayjs, dynamicHeight: number) => {
     const dateStr = date.format('YYYY-MM-DD');
     const calDay = calendarData[dateStr];
     const isCurrentMonth = date.month() === currentMonth.month();
@@ -401,7 +470,7 @@ const AdminCalendarPage: React.FC = () => {
           borderLeft: 'none',
           backgroundColor: bgColor,
           opacity: isCurrentMonth ? 1 : 0.4,
-          minHeight: 120,
+          minHeight: dynamicHeight,
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -433,16 +502,9 @@ const AdminCalendarPage: React.FC = () => {
           flex: 1,
           padding: 4,
           overflowY: 'auto',
-          maxHeight: 100,
+          maxHeight: dynamicHeight - 30,
         }}>
-          {filteredEmployees.slice(0, 5).map(emp => renderEmployeeItem(emp, dateStr, true))}
-          {filteredEmployees.length > 5 && (
-            <Tooltip title={filteredEmployees.slice(5).map(e => `${e.first_name} ${e.last_name}`).join(', ')}>
-              <div style={{ fontSize: 10, color: token.colorTextTertiary, textAlign: 'center', padding: 2 }}>
-                +{filteredEmployees.length - 5} {t('common.more') || 'more'}
-              </div>
-            </Tooltip>
-          )}
+          {filteredEmployees.map(emp => renderEmployeeItem(emp, dateStr, true))}
         </div>
       </div>
     );
@@ -523,14 +585,14 @@ const AdminCalendarPage: React.FC = () => {
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-        <Col>
+      <Row justify="space-between" align="middle" gutter={[0, 12]} style={{ marginBottom: 16 }}>
+        <Col xs={24} md="auto">
           <Title level={3} style={{ margin: 0 }}>
             <CalendarOutlined /> {t('admin.calendar.title')}
           </Title>
           <Text type="secondary">{t('admin.calendar.subtitle')}</Text>
         </Col>
-        <Col>
+        <Col xs={24} md="auto">
           <Segmented
             value={viewMode}
             onChange={(value) => setViewMode(value as 'month' | 'week')}
@@ -544,9 +606,9 @@ const AdminCalendarPage: React.FC = () => {
 
       <Card>
         <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
-          <Row justify="space-between" align="middle" gutter={16}>
-            <Col>
-              <Space>
+          <Row justify="space-between" align="middle" gutter={[16, 12]}>
+            <Col xs={24} md="auto">
+              <Space wrap>
                 {viewMode === 'month' ? (
                   <>
                     <Button icon={<LeftOutlined />} onClick={() => handleMonthChange(-1)} />
@@ -556,7 +618,7 @@ const AdminCalendarPage: React.FC = () => {
                       onChange={(date) => date && setCurrentMonth(date)}
                       allowClear={false}
                       format="MMMM YYYY"
-                      style={{ width: 180 }}
+                      style={{ width: isMobile ? '100%' : 180 }}
                     />
                     <Button icon={<RightOutlined />} onClick={() => handleMonthChange(1)} />
                     <Button onClick={() => setCurrentMonth(dayjs())}>{t('calendar.today')}</Button>
@@ -573,11 +635,18 @@ const AdminCalendarPage: React.FC = () => {
                 )}
               </Space>
             </Col>
-            <Col>
+            <Col xs={24} md="auto">
               <Space wrap>
-                <Text strong>{t('admin.calendar.filterByEmployee')}:</Text>
+                <Input
+                  placeholder={t('common.search')}
+                  prefix={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  allowClear
+                  style={{ width: 200 }}
+                />
                 <Select
-                  style={{ width: 220 }}
+                  style={{ width: isMobile ? '100%' : 220 }}
                   value={selectedEmployee}
                   onChange={setSelectedEmployee}
                   showSearch
@@ -596,11 +665,14 @@ const AdminCalendarPage: React.FC = () => {
             </Col>
           </Row>
           <Space wrap>
-            <Tag color="green"><DynamicIcon name={settings.icon_office} size={14} style={{ marginRight: 4 }} />{t('office.workFromOffice')}</Tag>
-            <Tag color="purple"><DynamicIcon name={settings.icon_remote} size={14} style={{ marginRight: 4 }} />{t('office.workFromHome')}</Tag>
-            <Tag color="gold"><DynamicIcon name={settings.icon_sick} size={14} style={{ marginRight: 4 }} />{t('calendar.sickDay')}</Tag>
-            <Tag color="blue"><DynamicIcon name={settings.icon_vacation} size={14} style={{ marginRight: 4 }} />{t('calendar.vacation')}</Tag>
-            <Tag color="magenta"><DynamicIcon name={settings.icon_excused} size={14} style={{ marginRight: 4 }} />{t('calendar.excusedAbsence')}</Tag>
+            <Tag color="green" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_office} size={14} style={{ marginRight: 4 }} />{t('office.workFromOffice')}</Tag>
+            <Tag color="cyan" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_remote} size={14} style={{ marginRight: 4 }} />{t('office.workFromHome')}</Tag>
+            <Tag color="gold" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_sick} size={14} style={{ marginRight: 4 }} />{t('calendar.sickDay')}</Tag>
+            <Tag color="geekblue" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_vacation} size={14} style={{ marginRight: 4 }} />{t('calendar.vacation')}</Tag>
+            <Tag color="purple" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_excused} size={14} style={{ marginRight: 4 }} />{t('calendar.excusedAbsence')}</Tag>
+            <Tag color="orange" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_unexcused} size={14} style={{ marginRight: 4 }} />{t('calendar.unexcusedAbsence')}</Tag>
+            <Tag color="red" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_holiday} size={14} style={{ marginRight: 4 }} />{t('calendar.holiday')}</Tag>
+            <Tag color="pink" style={{ display: 'flex', alignItems: 'center' }}><DynamicIcon name={settings.icon_dayoff} size={14} style={{ marginRight: 4 }} />{t('calendar.dayoff')}</Tag>
           </Space>
         </Space>
 
@@ -627,15 +699,18 @@ const AdminCalendarPage: React.FC = () => {
                 ))}
               </div>
               {/* Calendar weeks */}
-              {generateMonthGrid().map((week, weekIdx) => (
-                <div key={weekIdx} style={{ display: 'flex' }}>
-                  {week.map(date => renderDayCell(date))}
-                </div>
-              ))}
+              {(() => {
+                const dynamicHeight = getDynamicCellHeight();
+                return generateMonthGrid().map((week, weekIdx) => (
+                  <div key={weekIdx} style={{ display: 'flex' }}>
+                    {week.map(date => renderDayCell(date, dynamicHeight))}
+                  </div>
+                ));
+              })()}
             </div>
           ) : (
             <div style={{ border: `1px solid ${token.colorBorderSecondary}`, borderBottom: 'none', borderRight: 'none' }}>
-              <div style={{ display: 'flex', minHeight: 400 }}>
+              <div style={{ display: 'flex', minHeight: Math.max(400, getDynamicCellHeight() * 2) }}>
                 {getWeekDays().map(date => renderWeekDayCell(date))}
               </div>
             </div>

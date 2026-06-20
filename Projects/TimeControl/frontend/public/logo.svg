@@ -5,6 +5,7 @@
       <stop offset="100%" style="stop-color:#279CF1"/>
     </linearGradient>
   </defs>
+  <rect width="200" height="100" fill="white"/>
   <rect width="200" height="100" rx="8" fill="url(#bg)"/>
   <!-- H -->
   <rect x="15" y="15" width="12" height="70" fill="white"/>

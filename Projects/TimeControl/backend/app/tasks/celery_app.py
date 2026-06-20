@@ -26,6 +26,10 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.notification_tasks.check_missing_entries",
         "schedule": crontab(hour=9, minute=0),  # Run at 9:00 AM Latvia time daily
     },
+    "check-birthday-notifications-daily": {
+        "task": "app.tasks.notification_tasks.check_birthday_notifications",
+        "schedule": crontab(hour=8, minute=0),  # Run at 8:00 AM Latvia time daily
+    },
     "send-weekly-planning-reminders-monday": {
         "task": "app.tasks.notification_tasks.send_weekly_planning_reminders",
         "schedule": crontab(hour=8, minute=0, day_of_week=1),  # Monday at 8:00 AM Latvia time

@@ -11,6 +11,7 @@ class NotificationType(str, enum.Enum):
     CHANGE_REQUEST = "change_request"
     WEEKLY_REMINDER = "weekly_reminder"
     MISSING_ENTRY = "missing_entry"
+    OVERTIME_WARNING = "overtime_warning"  # Warning about weekly/monthly overtime
     SYSTEM = "system"
 
 
@@ -47,13 +48,17 @@ class NotificationSettings(Base):
     email_birthday = Column(Boolean, default=True)
     email_name_day = Column(Boolean, default=True)
     email_change_request = Column(Boolean, default=True)
-    email_weekly_reminder = Column(Boolean, default=False)  # Off by default for admins
+    email_weekly_reminder = Column(Boolean, default=True)
+    email_missing_entry = Column(Boolean, default=True)
+    email_overtime_warning = Column(Boolean, default=True)
 
     # In-app notifications
     app_birthday = Column(Boolean, default=True)
     app_name_day = Column(Boolean, default=True)
     app_change_request = Column(Boolean, default=True)
     app_weekly_reminder = Column(Boolean, default=True)
+    app_missing_entry = Column(Boolean, default=True)
+    app_overtime_warning = Column(Boolean, default=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

@@ -19,6 +19,9 @@ const defaultSettings: CompanySettings = {
   icon_remote: 'Monitor',
   icon_holiday: 'Gift',
   icon_excused: 'CircleCheckBig',
+  icon_unexcused: 'CircleX',
+  icon_dayoff: 'Coffee',
+  email_notifications_enabled: true,
 };
 
 export const useSettingsStore = create<SettingsState>()(

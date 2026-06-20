@@ -1,0 +1,339 @@
+================================================================================
+                    LIETOTAJA ROKASGRAMATA - TIMECONTROL
+================================================================================
+
+SATURA RADITAJS
+---------------
+1. Ievads
+2. Pieslegsanas sistemai
+3. Galvenais panelis (Dashboard)
+4. Kalendars
+5. Statistika
+6. Pazinojumi
+7. Profila iestatijumi
+8. Administratora funkcijas
+9. Biezi uzdotie jautajumi
+
+================================================================================
+1. IEVADS
+================================================================================
+
+TimeControl ir darba laika uzskaites sistema, kas lauj darbiniekiem:
+- Planot darba grafiku (birojs/attalinati)
+- Pieprasit atvalinajumus
+- Registret slimibas lapas
+- Sekot lidzi darba statistikai
+
+================================================================================
+2. PIESLEGSANAS SISTEMAI
+================================================================================
+
+PIRMA PIESLEGSANAS
+------------------
+1. Atveriet sistemas adresi parlukprogramma
+2. Ievadiet e-pasta adresi, ko sanemaat no administratora
+3. Ievadiet pagaidu paroli
+4. Sistema lugs nomainit paroli uz jaunu
+
+PAROLES PRASIBAS
+----------------
+- Vismaz 8 simboli
+- Vismaz viens lielais burts
+- Vismaz viens mazais burts
+- Vismaz viens cipars
+
+AIZMIRSTA PAROLE
+----------------
+1. Noklikskiniet uz "Aizmirsu paroli"
+2. Ievadiet savu e-pasta adresi
+3. Parbaudiet e-pastu un sekojiet saitei
+4. Iestatiet jaunu paroli
+
+================================================================================
+3. GALVENAIS PANELIS (DASHBOARD)
+================================================================================
+
+SODIENAS STATUSS
+----------------
+- Birojs - stradajat biroja
+- Attalinati - stradajat no majam
+- Atvalinajums - esat atvalinajuma
+- Slimibas lapa - esat slims
+- Brivdiena - valsts svetku diena
+- Attaisnots - attaisnota prombutne
+
+STATUSA MAINA
+-------------
+1. Noklikskiniet uz pogas ar velamo statusu
+2. Statuss tiks saglabats automatiski
+3. Ja nepieciesams mainit jau apstiprinātu statusu, izveidojiet izmainu
+   pieprasijumu
+
+NEDELAS PARSKATS
+----------------
+Zem sodienas statusa redzams nedelas grafiks ar katras dienas statusu.
+
+================================================================================
+4. KALENDARS
+================================================================================
+
+NAVIGACIJA
+----------
+- Izmantojiet bultinas < un > lai parvietotos starp menesiem
+- Noklikskiniet uz menesa nosaukuma, lai izveletos citu menesi
+- Poga "Sodien" atgriez uz pasreizejo datumu
+
+DIENAS STATUSA IESTATISANA
+--------------------------
+1. Noklikskiniet uz datuma kalendara
+2. Izvelieties statusu no piedavatajam opcijam:
+   - Birojs - darbs biroja
+   - Attalinati - attalinātais darbs
+3. Statuss tiks saglabats automatiski
+
+ATVALINAJUMA PIEPRASIŠANA
+-------------------------
+1. Noklikskiniet pogu "Pieprasit atvalinajumu"
+2. Izvelieties datumu diapazonu (sakuma un beigu datums)
+3. Pievienojiet piezimi (nav obligati)
+4. Noklikskiniet "Iesniegt"
+5. Pieprasijums tiks nosutits administratoram apstiprinasanai
+
+ATVALINAJUMA STATUSI
+--------------------
+- Gaida - pieprasijums gaida apstiprinajumu
+- Apstiprinats - atvalinajums ir apstiprinats
+- Noraidits - atvalinajums ir noraidits
+
+SLIMIBAS LAPAS REGISTRESANA
+---------------------------
+1. Noklikskiniet uz datuma, kad sacat slimot
+2. Izvelieties "Slimibas lapa"
+3. Ja slimojat vairakas dienas, atkartojiet katrai dienai
+
+================================================================================
+5. STATISTIKA
+================================================================================
+
+MENESA STATISTIKA
+-----------------
+- Kopa nostradatas dienas - darba dienu skaits
+- Biroja - dienas biroja
+- Attalinati - attalinata darba dienas
+- Atvalinajums - atvalinajuma dienas
+- Slimibas lapa - slimibas dienas
+
+GADA STATISTIKA
+---------------
+- Kopejais atvalinajuma dienu skaits
+- Atlikusas atvalinajuma dienas
+- Slimibas dienas gada
+
+GRAFIKI
+-------
+- Joslu diagramma pa menesiem
+- Sektoru diagramma ar statusu sadalijumu
+
+================================================================================
+6. PAZINOJUMI
+================================================================================
+
+PAZINOJUMU VEIDI
+----------------
+- Izmainu pieprasijumi - kad administrators apstrada jusu pieprasijumu
+- Atvalinajuma statuss - kad atvalinajums tiek apstiprinats/noraidits
+- Nedelas atgadinajums - atgadinajums planot nedelas grafiku (pirmdienās)
+- Sistemas pazinojumi - svariga informacija no administratora
+
+PAZINOJUMU PARVALDIBA
+---------------------
+1. Noklikskiniet uz zvana ikonas augšeja labaja sturi
+2. Neparbauditi pazinojumi tiks paraditi ar punktu
+3. Noklikskiniet uz pazinojuma, lai to atzimetu ka izlasitu
+
+================================================================================
+7. PROFILA IESTATIJUMI
+================================================================================
+
+PROFILA REDIGESANA
+------------------
+1. Noklikskiniet uz sava varda augšeja labaja sturi
+2. Izvelieties "Profils"
+3. Seit varat redzet savu informaciju:
+   - Vards, uzvards
+   - E-pasts
+   - Dzimsanas diena
+   - Varda diena
+   - Darba sakuma datums
+
+PIEZIME: Profila informaciju var mainit tikai administrators.
+
+PAROLES MAINA
+-------------
+1. Noklikskiniet uz sava varda
+2. Izvelieties "Mainit paroli"
+3. Ievadiet pasreizejo paroli
+4. Ievadiet jauno paroli (divas reizes)
+5. Noklikskiniet "Saglabat"
+
+VALODAS MAINA
+-------------
+1. Noklikskiniet uz valodas ikonas augšeja labaja sturi
+2. Izvelieties valodu:
+   - Latviesu (LV)
+   - English (EN)
+   - Русский (RU)
+
+TUMSAIS REZIMS
+--------------
+1. Noklikskiniet uz saules/meness ikonas
+2. Sistema parslēgsies starp gaišo un tumšo režimu
+
+================================================================================
+8. ADMINISTRATORA FUNKCIJAS
+================================================================================
+
+Si sadala attiecas tikai uz lietotajiem ar administratora tiesibam.
+
+DARBINIEKU PARVALDIBA
+---------------------
+Navigacija: Sanu izvēlne -> Administrēšana -> Darbinieki
+
+Jauna darbinieka pievienosana:
+1. Noklikskiniet "Pievienot darbinieku"
+2. Aizpildiet obligatos laukus:
+   - E-pasts
+   - Parole
+   - Vards
+   - Uzvards
+3. Papildus lauki (nav obligati):
+   - Dzimsanas diena (formats: DD.MM.GGGG)
+   - Varda diena (izvelieties dienu un menesi)
+   - Darba sakuma datums (formats: DD.MM.GGGG)
+   - Atvalinajuma dienas gada
+4. Noklikskiniet "Izveidot"
+
+Darbinieka redigesana:
+1. Atrodiet darbinieku saraksta
+2. Noklikskiniet uz redigesanas ikonas (zimulis)
+3. Veiciet izmainas
+4. Noklikskiniet "Saglabat"
+
+Darbinieka deaktivesana:
+1. Atrodiet darbinieku saraksta
+2. Noklikskiniet uz deaktivesanas pogas
+3. Apstipriniet darbibu
+
+PIEZIME: Deaktiveti darbinieki nevar pieslegties sistemai, bet vinu dati
+tiek saglabati.
+
+IKDIENAS PARSKATS
+-----------------
+Navigacija: Sanu izvēlne -> Administrēšana -> Ikdienas parskats
+
+Seit redzams:
+- Visu darbinieku sodienas statuss
+- Kas strada biroja
+- Kas strada attalinati
+- Kas ir atvalinajuma vai slimo
+
+IZMAINU PIEPRASIJUMI
+--------------------
+Navigacija: Sanu izvēlne -> Administrēšana -> Pieprasijumi
+
+Pieprasijumu apstrade:
+1. Atveriet pieprasijumu sarakstu
+2. Parskatiet pieprasijuma detalas:
+   - Darbinieka vards
+   - Pieprasijuma veids
+   - Datums
+   - Iemesls
+3. Noklikskiniet "Apstiprinat" vai "Noraidit"
+4. Ja noraidat, varat pievienot komentaru
+
+ATVALINAJUMU PARVALDIBA
+-----------------------
+Navigacija: Sanu izvēlne -> Administrēšana -> Atvalinajumi
+
+Seit varat:
+- Redzet visus atvalinajumu pieprasijumus
+- Apstiprinat vai noraidit atvalinajumus
+- Skatit atvalinajumu kalendaru
+
+STATISTIKAS PARSKATI
+--------------------
+Navigacija: Sanu izvēlne -> Administrēšana -> Parskati
+
+Pieejamie parskati:
+- Menesa darba laika parskats
+- Atvalinajumu izmantosanas parskats
+- Slimibas lapu statistika
+
+================================================================================
+9. BIEZI UZDOTIE JAUTAJUMI
+================================================================================
+
+KA MAINIT JAU IEVADITU STATUSU?
+-------------------------------
+Ja diena vel nav beigusies:
+1. Vienkarsi noklikskiniet uz cita statusa
+
+Ja diena ir pagajusi:
+1. Kalendara noklikskiniet uz datuma
+2. Izvelieties "Pieprasit izmainas"
+3. Noradiet iemeslu
+4. Gaidiet administratora apstiprinajumu
+
+KA ANULET ATVALINAJUMU?
+-----------------------
+Ja atvalinajums vel nav sacies:
+1. Atveriet kalendaru
+2. Atrodiet atvalinajumu
+3. Noklikskiniet "Dzest"
+
+Ja atvalinajums jau ir sacies:
+1. Sazinieties ar administratoru
+
+KAPEC NEVARU MAINIT PAGATNES DATUMUS?
+-------------------------------------
+Sistema nelau mainit pagatnes datus bez administratora apstiprinajuma, lai
+nodrosinatu datu precizitati. Izmantojiet izmainu pieprasijumu funkciju.
+
+KA REDZET, CIK ATVALINAJUMA DIENAS MAN ATLICIS?
+-----------------------------------------------
+1. Atveriet sadalu "Statistika"
+2. Skatiet "Gada statistika" bloku
+3. Tur redzams kopejais un atlikusais atvalinajuma dienu skaits
+
+SISTEMA NERADA MANUS DATUS PAREIZI
+----------------------------------
+1. Meginiet atsvadzinat lapu (F5)
+2. Izejiet no sistemas un piesakieties velreiz
+3. Ja problema saglabājas, sazinieties ar administratoru
+
+================================================================================
+KONTAKTI UN ATBALSTS
+================================================================================
+
+Ja rodas jautajumi vai problemas:
+
+1. Tehniskas problemas - sazinieties ar IT nodalu
+2. Atvalinajumu jautajumi - sazinieties ar savu vaditaju
+3. Sistemas kludas - zinojiet administratoram
+
+================================================================================
+ISINAJUMTAUSTINI
+================================================================================
+
+Taustins          Darbiba
+---------         --------
+Esc               Aizvērt dialogu
+Enter             Apstiprinat darbibu
+< >               Naviget starp menesiem (kalendārā)
+
+================================================================================
+
+Dokumentacija atjauninata: 2026. gada februaris
+Versija: 1.0
+
+================================================================================

@@ -1,5 +1,6 @@
 from typing import Optional, List
-from sqlalchemy import select
+from datetime import date, timedelta
+from sqlalchemy import select, and_, or_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -32,23 +33,59 @@ class UserService:
         )
         return result.scalar_one_or_none()
 
-    async def get_all_employees(self, active_only: bool = True) -> List[User]:
+    async def get_all_employees(
+        self,
+        active_only: bool = True,
+        employees_only: bool = False,
+        archived: Optional[bool] = False,
+        reference_date: Optional[date] = None,
+    ) -> List[User]:
         """Get all employees."""
         query = select(User).options(selectinload(User.profile))
         if active_only:
             query = query.where(User.is_active == True)
+        if employees_only:
+            query = query.where(User.is_employee == True)
+        if archived is not None:
+            reference_date = reference_date or date.today()
+            query = query.join(EmployeeProfile, User.id == EmployeeProfile.user_id)
+            if archived:
+                query = query.where(
+                    EmployeeProfile.employment_end_date.isnot(None),
+                    EmployeeProfile.employment_end_date <= reference_date,
+                )
+            else:
+                query = query.where(or_(
+                    EmployeeProfile.employment_end_date.is_(None),
+                    EmployeeProfile.employment_end_date > reference_date,
+                ))
         query = query.order_by(User.id)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_active_employees(self) -> List[User]:
-        """Get all active users (employees and admins)."""
+    async def get_active_employees(self, target_date: Optional[date] = None) -> List[User]:
+        """Get active users marked as employees and visible on the target date."""
         result = await self.db.execute(
             select(User)
             .options(selectinload(User.profile))
-            .where(User.is_active == True)
+            .where(User.is_active == True, User.is_employee == True)
         )
-        return list(result.scalars().all())
+        employees = list(result.scalars().all())
+        if target_date is None:
+            return employees
+
+        visible_employees = []
+        for employee in employees:
+            profile = employee.profile
+            if not profile:
+                continue
+            if profile.employment_start_date and target_date < profile.employment_start_date:
+                continue
+            if profile.employment_end_date and target_date >= profile.employment_end_date:
+                continue
+            visible_employees.append(employee)
+
+        return visible_employees
 
     async def create(self, user_data: UserCreate) -> User:
         """Create a new user with profile."""
@@ -70,10 +107,21 @@ class UserService:
             phone=user_data.phone,
             bank_account=user_data.bank_account,
             position=user_data.position,
+            department=user_data.department,
             work_email=user_data.work_email,
             employment_type=user_data.employment_type,
             payment_type=user_data.payment_type,
             birthday=user_data.birthday,
+            name_day=user_data.name_day,
+            contract_number=user_data.contract_number,
+            employment_start_date=user_data.employment_start_date,
+            employment_end_date=user_data.employment_end_date,
+            employment_end_reason=user_data.employment_end_reason,
+            emergency_contact_name=user_data.emergency_contact_name,
+            emergency_contact_phone=user_data.emergency_contact_phone,
+            declared_address=user_data.declared_address,
+            actual_address=user_data.actual_address,
+            personal_code=user_data.personal_code,
         )
         self.db.add(profile)
         await self.db.commit()
@@ -145,3 +193,85 @@ class UserService:
         await self.db.delete(user)
         await self.db.flush()
         return True
+
+    async def get_upcoming_birthdays(self, days_ahead: int = 2) -> List[dict]:
+        """Get employees with upcoming birthdays (today and within days_ahead days)."""
+        today = date.today()
+
+        # Get all active employees with profiles
+        employees = await self.get_all_employees(active_only=True, employees_only=True)
+
+        upcoming = []
+        for emp in employees:
+            if emp.profile and emp.profile.birthday:
+                birthday = emp.profile.birthday
+                # Create this year's birthday
+                try:
+                    this_year_birthday = birthday.replace(year=today.year)
+                except ValueError:
+                    # Handle Feb 29 for non-leap years
+                    this_year_birthday = birthday.replace(year=today.year, day=28)
+
+                # Check if birthday is today or within days_ahead
+                days_until = (this_year_birthday - today).days
+
+                # Handle year boundary (e.g., today is Dec 30, birthday is Jan 2)
+                if days_until < 0:
+                    try:
+                        next_year_birthday = birthday.replace(year=today.year + 1)
+                    except ValueError:
+                        next_year_birthday = birthday.replace(year=today.year + 1, day=28)
+                    days_until = (next_year_birthday - today).days
+                    this_year_birthday = next_year_birthday
+
+                if 0 <= days_until <= days_ahead:
+                    upcoming.append({
+                        "user_id": emp.id,
+                        "first_name": emp.profile.first_name,
+                        "last_name": emp.profile.last_name,
+                        "birthday": this_year_birthday.isoformat(),
+                        "days_until": days_until,
+                        "is_today": days_until == 0,
+                    })
+
+        # Sort by days_until
+        upcoming.sort(key=lambda x: x["days_until"])
+        return upcoming
+
+    async def get_upcoming_name_days(self, days_ahead: int = 2) -> List[dict]:
+        """Get employees with upcoming name days (today and within days_ahead days)."""
+        today = date.today()
+
+        employees = await self.get_all_employees(active_only=True, employees_only=True)
+
+        upcoming = []
+        for emp in employees:
+            if emp.profile and emp.profile.name_day:
+                name_day = emp.profile.name_day
+                try:
+                    this_year_name_day = name_day.replace(year=today.year)
+                except ValueError:
+                    this_year_name_day = name_day.replace(year=today.year, day=28)
+
+                days_until = (this_year_name_day - today).days
+
+                if days_until < 0:
+                    try:
+                        next_year_name_day = name_day.replace(year=today.year + 1)
+                    except ValueError:
+                        next_year_name_day = name_day.replace(year=today.year + 1, day=28)
+                    days_until = (next_year_name_day - today).days
+                    this_year_name_day = next_year_name_day
+
+                if 0 <= days_until <= days_ahead:
+                    upcoming.append({
+                        "user_id": emp.id,
+                        "first_name": emp.profile.first_name,
+                        "last_name": emp.profile.last_name,
+                        "name_day": this_year_name_day.isoformat(),
+                        "days_until": days_until,
+                        "is_today": days_until == 0,
+                    })
+
+        upcoming.sort(key=lambda x: x["days_until"])
+        return upcoming

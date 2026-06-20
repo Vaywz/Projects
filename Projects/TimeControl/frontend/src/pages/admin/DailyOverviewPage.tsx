@@ -19,20 +19,23 @@ import {
   InputNumber,
   Select,
   Popconfirm,
+  Dropdown,
 } from 'antd';
 import {
   ClockCircleOutlined,
-  HomeOutlined,
-  LaptopOutlined,
   UserOutlined,
   ExclamationCircleOutlined,
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
+  DownOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../../services/api';
 import { User, TimeEntry } from '../../types';
+import DynamicIcon from '../../components/DynamicIcon';
+import { useSettingsStore } from '../../store/settingsStore';
 
 const { Title, Text } = Typography;
 
@@ -40,11 +43,13 @@ interface EmployeeDayData {
   user: User;
   entries: TimeEntry[];
   totalHours: number;
-  status: 'working' | 'vacation' | 'sick' | 'excused' | 'absent';
+  status: 'working' | 'vacation' | 'sick' | 'excused' | 'unexcused' | 'holiday' | 'dayoff' | 'absent';
+  dayStatusId?: number;
 }
 
 const DailyOverviewPage: React.FC = () => {
   const { t } = useTranslation();
+  const { settings } = useSettingsStore();
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [employees, setEmployees] = useState<User[]>([]);
   const [dailyData, setDailyData] = useState<EmployeeDayData[]>([]);
@@ -56,6 +61,13 @@ const DailyOverviewPage: React.FC = () => {
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [entryForm] = Form.useForm();
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchText), 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
 
   const fetchEmployees = async () => {
     try {
@@ -75,19 +87,28 @@ const DailyOverviewPage: React.FC = () => {
       const results: EmployeeDayData[] = [];
 
       // Get all employees status for the day
-      let employeesStatus: any = {};
+      let employeesStatus: Record<number, { status: string; dayStatusId?: number }> = {};
       try {
         const statusResponse = await api.getAllEmployeesStatus(dateStr);
         if (statusResponse?.employees) {
           statusResponse.employees.forEach((emp: any) => {
-            employeesStatus[emp.user_id] = emp.status;
+            employeesStatus[emp.user_id] = {
+              status: emp.status,
+              dayStatusId: emp.day_status_id,
+            };
           });
         }
       } catch (e) {
         // If API fails, continue without status data
       }
 
-      for (const employee of employeeList) {
+      // Filter out employees whose employment hasn't started yet
+      const filteredEmployeeList = employeeList.filter(emp => {
+        if (!emp.profile?.employment_start_date) return true;
+        return dateStr >= emp.profile.employment_start_date;
+      });
+
+      for (const employee of filteredEmployeeList) {
         try {
           const entries = await api.getEmployeeTimeEntries(employee.id, dateStr, dateStr);
 
@@ -103,7 +124,9 @@ const DailyOverviewPage: React.FC = () => {
 
           // Determine status from API or entries
           let status: EmployeeDayData['status'] = 'absent';
-          const apiStatus = employeesStatus[employee.id];
+          const empStatus = employeesStatus[employee.id];
+          const apiStatus = empStatus?.status;
+          const dayStatusId = empStatus?.dayStatusId;
 
           if (apiStatus === 'vacation') {
             status = 'vacation';
@@ -111,6 +134,12 @@ const DailyOverviewPage: React.FC = () => {
             status = 'sick';
           } else if (apiStatus === 'excused') {
             status = 'excused';
+          } else if (apiStatus === 'unexcused') {
+            status = 'unexcused';
+          } else if (apiStatus === 'holiday') {
+            status = 'holiday';
+          } else if (apiStatus === 'dayoff') {
+            status = 'dayoff';
           } else if (entries && entries.length > 0) {
             status = 'working';
           }
@@ -120,6 +149,7 @@ const DailyOverviewPage: React.FC = () => {
             entries: entries || [],
             totalHours,
             status,
+            dayStatusId,
           });
         } catch (err) {
           console.error(`Error fetching entries for employee ${employee.id}:`, err);
@@ -162,6 +192,62 @@ const DailyOverviewPage: React.FC = () => {
     }
   };
 
+  // Helper to parse time from backend (supports both HH:mm and HH:mm:ss)
+  const parseTime = (timeStr: string) => {
+    if (!timeStr) return null;
+    // Try HH:mm:ss first, then HH:mm
+    let parsed = dayjs(timeStr, 'HH:mm:ss');
+    if (!parsed.isValid()) {
+      parsed = dayjs(timeStr, 'HH:mm');
+    }
+    return parsed.isValid() ? parsed : null;
+  };
+
+  // Map of known backend error messages to translation keys
+  const errorTranslations: Record<string, string> = {
+    'Maximum work time is 8 hours': 'errors.maxWorkTime8Hours',
+    'end_time must be after start_time': 'errors.endTimeAfterStart',
+    'Time entry overlaps with existing entry': 'errors.timeEntryOverlaps',
+    'Cannot create time entries beyond next month': 'errors.cannotCreateBeyondNextMonth',
+    'Time entry not found': 'errors.timeEntryNotFound',
+    'Employee not found': 'errors.employeeNotFound',
+    'Invalid time format': 'errors.invalidTimeFormat',
+    'Invalid date format': 'errors.invalidDateFormat',
+  };
+
+  // Translate a single error message
+  const translateError = (msg: string): string => {
+    // Check for known error messages
+    for (const [key, translationKey] of Object.entries(errorTranslations)) {
+      if (msg.toLowerCase().includes(key.toLowerCase())) {
+        return t(translationKey);
+      }
+    }
+    return msg;
+  };
+
+  // Helper to extract error message from API response
+  const getErrorMessage = (error: any): string => {
+    const detail = error?.response?.data?.detail;
+    if (!detail) return t('errors.somethingWentWrong');
+
+    // If detail is a string, translate it
+    if (typeof detail === 'string') return translateError(detail);
+
+    // If detail is an array of validation errors, extract and translate messages
+    if (Array.isArray(detail)) {
+      const messages = detail.map((err: any) => {
+        if (typeof err === 'string') return translateError(err);
+        if (err?.msg) return translateError(err.msg);
+        return JSON.stringify(err);
+      });
+      return messages.join(', ');
+    }
+
+    // Otherwise, stringify it
+    return JSON.stringify(detail);
+  };
+
   const openExcusedModal = (employee: User) => {
     setSelectedEmployee(employee);
     excusedForm.resetFields();
@@ -184,7 +270,39 @@ const DailyOverviewPage: React.FC = () => {
       // Refresh data
       fetchDailyData(selectedDate, employees);
     } catch (error: any) {
-      message.error(error.response?.data?.detail || t('errors.somethingWentWrong'));
+      message.error(getErrorMessage(error));
+    }
+  };
+
+  const handleSetStatus = async (employee: User, status: 'sick' | 'vacation' | 'excused' | 'unexcused' | 'holiday' | 'dayoff') => {
+    try {
+      await api.createEmployeeDayStatus(employee.id, {
+        date: selectedDate.format('YYYY-MM-DD'),
+        status: status,
+        note: '',
+      });
+      const statusLabels: Record<string, string> = {
+        sick: t('calendar.sickDay'),
+        vacation: t('calendar.vacation'),
+        excused: t('calendar.excusedAbsence'),
+        unexcused: t('calendar.unexcusedAbsence'),
+        holiday: t('calendar.holiday'),
+        dayoff: t('calendar.dayoff'),
+      };
+      message.success(statusLabels[status] + ' - OK');
+      fetchDailyData(selectedDate, employees);
+    } catch (error: any) {
+      message.error(getErrorMessage(error));
+    }
+  };
+
+  const handleClearStatus = async (employee: User, dayStatusId: number) => {
+    try {
+      await api.deleteEmployeeDayStatus(employee.id, dayStatusId);
+      message.success(t('admin.daily.statusCleared'));
+      fetchDailyData(selectedDate, employees);
+    } catch (error: any) {
+      message.error(getErrorMessage(error));
     }
   };
 
@@ -192,8 +310,8 @@ const DailyOverviewPage: React.FC = () => {
     setEditingEntry(entry);
     setEditingUser(user);
     entryForm.setFieldsValue({
-      start_time: dayjs(entry.start_time, 'HH:mm'),
-      end_time: dayjs(entry.end_time, 'HH:mm'),
+      start_time: parseTime(entry.start_time),
+      end_time: parseTime(entry.end_time),
       break_minutes: entry.break_minutes,
       workplace: entry.workplace,
       comment: entry.comment,
@@ -205,8 +323,14 @@ const DailyOverviewPage: React.FC = () => {
     setEditingEntry(null);
     setEditingUser(user);
     entryForm.resetFields();
+
+    // Check if employee already has entries for this day
+    const employeeData = dailyData.find(d => d.user.id === user.id);
+    const hasExistingEntries = employeeData && employeeData.entries.length > 0;
+
+    // Admin can set any break time, default to 60 for first entry, 0 for subsequent
     entryForm.setFieldsValue({
-      break_minutes: 0,
+      break_minutes: hasExistingEntries ? 0 : 60,
       workplace: 'office',
     });
     setEditModalVisible(true);
@@ -216,18 +340,22 @@ const DailyOverviewPage: React.FC = () => {
     if (!editingUser) return;
 
     try {
-      const entryData = {
+      // Build entry data with time format without seconds
+      const entryData: Record<string, any> = {
         date: selectedDate.format('YYYY-MM-DD'),
         start_time: values.start_time.format('HH:mm'),
         end_time: values.end_time.format('HH:mm'),
-        break_minutes: values.break_minutes || 0,
+        break_minutes: values.break_minutes ?? 0,
         workplace: values.workplace,
-        comment: values.comment,
       };
+      // Only include comment if it has a value (avoid sending undefined/empty)
+      if (values.comment && values.comment.trim()) {
+        entryData.comment = values.comment;
+      }
 
       if (editingEntry) {
-        // Update existing entry
-        await api.updateTimeEntry(editingEntry.id, entryData);
+        // Update existing entry (use admin endpoint)
+        await api.adminUpdateTimeEntry(editingEntry.id, entryData);
         message.success(t('timeEntry.updateSuccess'));
       } else {
         // Create new entry for employee
@@ -241,7 +369,7 @@ const DailyOverviewPage: React.FC = () => {
       setEditingUser(null);
       fetchDailyData(selectedDate, employees);
     } catch (error: any) {
-      message.error(error.response?.data?.detail || t('errors.somethingWentWrong'));
+      message.error(getErrorMessage(error));
     }
   };
 
@@ -251,28 +379,40 @@ const DailyOverviewPage: React.FC = () => {
       message.success(t('timeEntry.deleteSuccess'));
       fetchDailyData(selectedDate, employees);
     } catch (error: any) {
-      message.error(error.response?.data?.detail || t('errors.somethingWentWrong'));
+      message.error(getErrorMessage(error));
     }
-  };
-
-  const formatHours = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    return `${h}h ${m}m`;
   };
 
   const getStatusTag = (data: EmployeeDayData) => {
     if (data.status === 'working') {
-      return <Tag color="green">{formatHours(data.totalHours)}</Tag>;
+      // Check workplace from entries
+      const hasOffice = data.entries.some(e => e.workplace === 'office');
+      const hasRemote = data.entries.some(e => e.workplace === 'remote');
+      if (hasOffice && hasRemote) {
+        return <Tag color="green"><DynamicIcon name={settings.icon_office} size={14} style={{ marginRight: 4 }} />{t('timeEntry.office')} / {t('timeEntry.remote')}</Tag>;
+      } else if (hasOffice) {
+        return <Tag color="green"><DynamicIcon name={settings.icon_office} size={14} style={{ marginRight: 4 }} />{t('timeEntry.office')}</Tag>;
+      } else {
+        return <Tag color="cyan"><DynamicIcon name={settings.icon_remote} size={14} style={{ marginRight: 4 }} />{t('timeEntry.remote')}</Tag>;
+      }
     }
     if (data.status === 'vacation') {
-      return <Tag color="blue">{t('calendar.vacation')}</Tag>;
+      return <Tag color="geekblue"><DynamicIcon name={settings.icon_vacation} size={14} style={{ marginRight: 4 }} />{t('calendar.vacation')}</Tag>;
     }
     if (data.status === 'sick') {
-      return <Tag color="orange">{t('calendar.sickDay')}</Tag>;
+      return <Tag color="gold"><DynamicIcon name={settings.icon_sick} size={14} style={{ marginRight: 4 }} />{t('calendar.sickDay')}</Tag>;
     }
     if (data.status === 'excused') {
-      return <Tag color="purple">{t('calendar.excusedAbsence')}</Tag>;
+      return <Tag color="purple"><DynamicIcon name={settings.icon_excused} size={14} style={{ marginRight: 4 }} />{t('calendar.excusedAbsence')}</Tag>;
+    }
+    if (data.status === 'unexcused') {
+      return <Tag color="orange"><DynamicIcon name={settings.icon_unexcused} size={14} style={{ marginRight: 4 }} />{t('calendar.unexcusedAbsence')}</Tag>;
+    }
+    if (data.status === 'holiday') {
+      return <Tag color="red"><DynamicIcon name={settings.icon_holiday} size={14} style={{ marginRight: 4 }} />{t('calendar.holiday')}</Tag>;
+    }
+    if (data.status === 'dayoff') {
+      return <Tag color="pink"><DynamicIcon name={settings.icon_dayoff} size={14} style={{ marginRight: 4 }} />{t('calendar.dayoff')}</Tag>;
     }
     return <Tag color="red">{t('admin.daily.absent')}</Tag>;
   };
@@ -322,11 +462,11 @@ const DailyOverviewPage: React.FC = () => {
               {record.entries.map((entry, idx) => (
                 <Space key={idx} size="small" wrap>
                   <ClockCircleOutlined />
-                  <Text>{entry.start_time} - {entry.end_time}</Text>
+                  <Text>{entry.start_time?.substring(0, 5)} - {entry.end_time?.substring(0, 5)}</Text>
                   {entry.workplace === 'office' ? (
-                    <Tag icon={<HomeOutlined />} color="blue">{t('timeEntry.office')}</Tag>
+                    <Tag color="green"><DynamicIcon name={settings.icon_office} size={14} style={{ marginRight: 4 }} />{t('timeEntry.office')}</Tag>
                   ) : (
-                    <Tag icon={<LaptopOutlined />} color="green">{t('timeEntry.remote')}</Tag>
+                    <Tag color="cyan"><DynamicIcon name={settings.icon_remote} size={14} style={{ marginRight: 4 }} />{t('timeEntry.remote')}</Tag>
                   )}
                   {entry.comment && (
                     <Text type="secondary" style={{ fontSize: 12 }}>({entry.comment})</Text>
@@ -363,15 +503,63 @@ const DailyOverviewPage: React.FC = () => {
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 120,
+      width: 180,
       render: (_: any, record: EmployeeDayData) => (
-        <Button
-          type="link"
-          icon={<ExclamationCircleOutlined />}
-          onClick={() => openExcusedModal(record.user)}
+        <Dropdown
+          menu={{
+            onClick: ({ key }) => {
+              if (key === 'clear' && record.dayStatusId) {
+                handleClearStatus(record.user, record.dayStatusId);
+              } else if (key === 'excused') {
+                openExcusedModal(record.user);
+              } else {
+                handleSetStatus(record.user, key as 'sick' | 'vacation' | 'excused' | 'unexcused' | 'holiday' | 'dayoff');
+              }
+            },
+            items: [
+              ...(record.dayStatusId ? [{
+                key: 'clear',
+                icon: <DeleteOutlined />,
+                label: t('admin.daily.clearStatus'),
+                danger: true,
+              }, { type: 'divider' as const }] : []),
+              {
+                key: 'sick',
+                icon: <DynamicIcon name={settings.icon_sick} size={14} />,
+                label: t('calendar.sickDay'),
+              },
+              {
+                key: 'vacation',
+                icon: <DynamicIcon name={settings.icon_vacation} size={14} />,
+                label: t('calendar.vacation'),
+              },
+              {
+                key: 'excused',
+                icon: <DynamicIcon name={settings.icon_excused} size={14} />,
+                label: t('calendar.excusedAbsence'),
+              },
+              {
+                key: 'unexcused',
+                icon: <DynamicIcon name={settings.icon_unexcused} size={14} />,
+                label: t('calendar.unexcusedAbsence'),
+              },
+              {
+                key: 'holiday',
+                icon: <DynamicIcon name={settings.icon_holiday} size={14} />,
+                label: t('calendar.holiday'),
+              },
+              {
+                key: 'dayoff',
+                icon: <DynamicIcon name={settings.icon_dayoff} size={14} />,
+                label: t('calendar.dayoff'),
+              },
+            ],
+          }}
         >
-          {t('calendar.excusedAbsence')}
-        </Button>
+          <Button>
+            {t('admin.daily.setStatus')} <DownOutlined />
+          </Button>
+        </Dropdown>
       ),
     },
   ];
@@ -381,25 +569,26 @@ const DailyOverviewPage: React.FC = () => {
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
+      <Row justify="space-between" align="middle" gutter={[0, 12]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md="auto">
           <Title level={3} style={{ margin: 0 }}>
             {t('admin.daily.title')}
           </Title>
           <Text type="secondary">{t('admin.daily.subtitle')}</Text>
         </Col>
-        <Col>
+        <Col xs={24} md="auto">
           <DatePicker
             value={selectedDate}
             onChange={handleDateChange}
             allowClear={false}
             size="large"
+            format="DD.MM.YYYY"
           />
         </Col>
       </Row>
 
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={8}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={8}>
           <Card>
             <Space>
               <ClockCircleOutlined style={{ fontSize: 24, color: '#1890ff' }} />
@@ -410,7 +599,7 @@ const DailyOverviewPage: React.FC = () => {
             </Space>
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} md={8}>
           <Card>
             <Space>
               <ExclamationCircleOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
@@ -421,7 +610,7 @@ const DailyOverviewPage: React.FC = () => {
             </Space>
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} md={8}>
           <Card>
             <Space>
               <UserOutlined style={{ fontSize: 24, color: '#52c41a' }} />
@@ -434,13 +623,27 @@ const DailyOverviewPage: React.FC = () => {
         </Col>
       </Row>
 
-      <Card>
+      <Card extra={
+        <Input
+          placeholder={t('common.search')}
+          prefix={<SearchOutlined />}
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          allowClear
+          style={{ width: 200 }}
+        />
+      }>
         <Table
           columns={columns}
-          dataSource={dailyData}
+          dataSource={dailyData.filter((d) => {
+            if (!debouncedSearch) return true;
+            const name = `${d.user.profile?.first_name || ''} ${d.user.profile?.last_name || ''}`.toLowerCase();
+            return name.includes(debouncedSearch.toLowerCase());
+          })}
           rowKey={(record) => record.user.id}
           loading={loading}
           pagination={false}
+          scroll={{ x: 'max-content' }}
         />
       </Card>
 
@@ -471,7 +674,7 @@ const DailyOverviewPage: React.FC = () => {
           <Text>{t('common.date')}: </Text>
           <Text strong>{selectedDate.format('DD.MM.YYYY')}</Text>
         </div>
-        <Form form={excusedForm} onFinish={handleExcusedAbsence} layout="vertical">
+        <Form form={excusedForm} onFinish={handleExcusedAbsence} layout="vertical" onKeyDown={(e: any) => e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.preventDefault()}>
           <Form.Item name="note" label={t('vacation.reason')}>
             <Input.TextArea rows={3} />
           </Form.Item>
@@ -519,34 +722,34 @@ const DailyOverviewPage: React.FC = () => {
           <Text>{t('common.date')}: </Text>
           <Text strong>{selectedDate.format('DD.MM.YYYY')}</Text>
         </div>
-        <Form form={entryForm} onFinish={handleSaveEntry} layout="vertical">
+        <Form form={entryForm} onFinish={handleSaveEntry} layout="vertical" onKeyDown={(e: any) => e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.preventDefault()}>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 name="start_time"
                 label={t('timeEntry.startTime')}
                 rules={[{ required: true, message: t('errors.required') }]}
               >
-                <TimePicker format="HH:mm" style={{ width: '100%' }} />
+                <TimePicker format="HH:mm" style={{ width: '100%' }} onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 name="end_time"
                 label={t('timeEntry.endTime')}
                 rules={[{ required: true, message: t('errors.required') }]}
               >
-                <TimePicker format="HH:mm" style={{ width: '100%' }} />
+                <TimePicker format="HH:mm" style={{ width: '100%' }} onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()} />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item name="break_minutes" label={t('timeEntry.breakMinutes')}>
                 <InputNumber min={0} max={480} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 name="workplace"
                 label={t('timeEntry.workplace')}

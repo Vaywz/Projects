@@ -6,6 +6,11 @@ import os
 from app.core.config import settings
 from app.api import api_router
 
+allowed_origins = list(dict.fromkeys([
+    *settings.get_cors_origins(),
+    settings.FRONTEND_URL,
+]))
+
 app = FastAPI(
     title=settings.APP_NAME,
     description="Employee Time Tracking System",
@@ -18,14 +23,10 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        settings.FRONTEND_URL,
-    ],
+    allow_origins=[origin for origin in allowed_origins if origin],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
 )
 
 # Include API router

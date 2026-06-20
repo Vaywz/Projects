@@ -26,12 +26,14 @@ import { CompanySettings } from '../../types';
 const { Title, Text } = Typography;
 
 const iconCategories = [
-  { key: 'icon_vacation', labelKey: 'calendar.vacation', color: 'blue' },
+  { key: 'icon_vacation', labelKey: 'calendar.vacation', color: 'geekblue' },
   { key: 'icon_sick', labelKey: 'calendar.sickDay', color: 'gold' },
   { key: 'icon_office', labelKey: 'timeEntry.office', color: 'green' },
-  { key: 'icon_remote', labelKey: 'timeEntry.remote', color: 'purple' },
+  { key: 'icon_remote', labelKey: 'timeEntry.remote', color: 'cyan' },
   { key: 'icon_holiday', labelKey: 'calendar.holiday', color: 'red' },
-  { key: 'icon_excused', labelKey: 'calendar.excusedAbsence', color: 'violet' },
+  { key: 'icon_excused', labelKey: 'calendar.excusedAbsence', color: 'purple' },
+  { key: 'icon_unexcused', labelKey: 'calendar.unexcusedAbsence', color: 'orange' },
+  { key: 'icon_dayoff', labelKey: 'calendar.dayoff', color: 'pink' },
 ];
 
 const SettingsPage: React.FC = () => {
@@ -63,6 +65,8 @@ const SettingsPage: React.FC = () => {
         icon_remote: settingsData.icon_remote,
         icon_holiday: settingsData.icon_holiday,
         icon_excused: settingsData.icon_excused,
+        icon_unexcused: settingsData.icon_unexcused,
+        icon_dayoff: settingsData.icon_dayoff,
       });
 
       setLogoPreview(settingsData.logo_url);
@@ -153,7 +157,7 @@ const SettingsPage: React.FC = () => {
               )}
             </div>
 
-            <Space style={{ width: '100%', justifyContent: 'center' }}>
+            <Space wrap style={{ width: '100%', justifyContent: 'center' }}>
               <Upload
                 accept="image/*"
                 showUploadList={false}
@@ -177,6 +181,11 @@ const SettingsPage: React.FC = () => {
           </Card>
         </Col>
 
+        <Col xs={24} lg={12}>
+        </Col>
+      </Row>
+
+      <Row gutter={24}>
         <Col xs={24} lg={12}>
           <Card title={t('admin.settings.iconCustomization')}>
             <Form form={form} onFinish={handleSaveIcons} layout="vertical">

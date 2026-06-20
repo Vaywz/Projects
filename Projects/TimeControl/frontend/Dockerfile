@@ -9,6 +9,10 @@ COPY package*.json ./
 # Install dependencies (legacy-peer-deps for TypeScript compatibility)
 RUN npm install --legacy-peer-deps
 
+# Accept build argument for API URL
+ARG REACT_APP_API_URL=/api
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
 # Copy source code
 COPY . .
 

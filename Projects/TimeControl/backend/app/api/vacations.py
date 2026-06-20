@@ -2,9 +2,12 @@ from datetime import date
 from typing import List
 from fastapi import APIRouter, HTTPException, status, Query
 
+from sqlalchemy import select
+
 from app.schemas.vacation import VacationCreate, VacationUpdate, VacationResponse
 from app.services.vacation_service import VacationService
 from app.models.user import UserRole
+from app.models.employee_profile import EmployeeProfile
 from .deps import DbSession, CurrentUser
 
 router = APIRouter()
@@ -54,6 +57,17 @@ async def create_vacation(
     db: DbSession = None
 ):
     """Create a new vacation."""
+    # Check employment start date
+    profile_result = await db.execute(
+        select(EmployeeProfile).where(EmployeeProfile.user_id == current_user.id)
+    )
+    profile = profile_result.scalar_one_or_none()
+    if profile and profile.employment_start_date and vacation_data.date_from < profile.employment_start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot create entries before employment start date ({profile.employment_start_date})"
+        )
+
     vacation_service = VacationService(db)
 
     try:
@@ -197,9 +211,9 @@ async def delete_vacation(
 
     today = date.today()
 
-    # Non-admin: can only delete future vacations
+    # Non-admin: can only delete vacations that start today or in future
     if not is_admin:
-        if vacation.date_from <= today:
+        if vacation.date_from < today:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot delete a vacation that has already started. You can only edit it."

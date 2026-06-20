@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Date, Boolean, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Date, Boolean, DateTime, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -10,10 +10,16 @@ class StatusType(str, enum.Enum):
     SICK = "sick"
     VACATION = "vacation"
     EXCUSED = "excused"  # Оправданный пропуск
+    UNEXCUSED = "unexcused"  # Неоправданный пропуск
+    HOLIDAY = "holiday"  # Выходной / праздничный день
+    DAYOFF = "dayoff"  # Brīvdiena - выходной для part-time сотрудников
 
 
 class DayStatus(Base):
     __tablename__ = "day_statuses"
+    __table_args__ = (
+        UniqueConstraint('user_id', 'date', name='uq_day_status_user_date'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
