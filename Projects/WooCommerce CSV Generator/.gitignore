@@ -1,0 +1,40 @@
+# Local data and generated exports
+output/
+*.csv
+*.xlsx
+*.xls
+*.log
+
+# Source assets are not committed
+*.pdf
+*.zip
+*.7z
+*.rar
+*.jpg
+*.jpeg
+*.png
+*.webp
+extracted_images/
+acf_images/
+acf_images_clean/
+materials_images/
+materials_upload/
+all_images_upload*/
+new_images_upload/
+pdf_extracted/
+pdf_images/
+pdf_pages/
+pdf_upload/
+upload_missing*/
+
+# Python/runtime
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Local config/secrets
+.env
+.env.*
+!.env.example
